@@ -132,7 +132,14 @@ const Test = () => {
 				xPercent: 100,
 			});
 			gsap.set(
-				['.sticker', '.card h3', '.card__front img', '.watermark', '.arrow'],
+				[
+					'.sticker',
+					'.card h3',
+					'.card__front img',
+					'.watermark',
+					'.arrow',
+					'.card__badge',
+				],
 				{
 					opacity: 0,
 				}
@@ -186,6 +193,14 @@ const Test = () => {
 					{
 						opacity: 1,
 						duration: 0.5,
+					},
+					'<'
+				)
+				.to(
+					'.card__badge',
+					{
+						opacity: 1,
+						duration: 0.4,
 					},
 					'<'
 				)
@@ -308,19 +323,19 @@ const Test = () => {
 								</div>
 								<img
 									className="gemstone"
-									src="https://assets.codepen.io/605876/techtrades-gemstone.png"
+									src="/assets/stellar-tea-icon.png"
 									alt=""
 								/>
 							</div>
 							<div className="spotlight"></div>
 						</div>
 						<div className="card__front">
-							<div className="img">
+							{/* <div className="img">
 								<img
 									src="https://assets.codepen.io/605876/headshot--square.jpeg"
 									alt=""
 								/>
-							</div>
+							</div> */}
 							<div className="debug">
 								<div className="refraction refraction--debug"></div>
 								<div className="refraction refraction--debug"></div>
@@ -343,7 +358,7 @@ const Test = () => {
 									<br />
 									<span>Common</span>
 								</h3>
-								{/* <svg
+								<svg
 									className="signature"
 									viewBox="0 0 271 209"
 									fill="none"
@@ -440,8 +455,17 @@ const Test = () => {
 											} as CSSVarStyle
 										}
 									></path>
-								</svg> */}
+								</svg>
+								<div className="card__badge">
+									<img src="/stellar-tea-icon.png" alt="Stellar Tea icon" />
+								</div>
 								{/* <div className="sticker">
+									<img
+										src="/stellar-tea-icon.png"
+										alt="Stellar Tea icon"
+										width={20}
+										height={20}
+									/>
 									<svg
 										viewBox="0 0 24 24"
 										fill="none"
@@ -460,12 +484,14 @@ const Test = () => {
 										/>
 									</svg>
 								</div> */}
-								<img
-									src="https://assets.codepen.io/605876/headshot--square-transparent.png"
-									alt=""
-								/>
+								<div className="card__main">
+									<img
+										src="/assets/stellar-tea-001.png"
+										alt="Stellar Tea illustration"
+									/>
+								</div>
 							</div>
-							<div className="spotlight"></div>
+							{/* <div className="spotlight"></div> */}
 							<div className="glare-container">
 								<div className="glare"></div>
 							</div>
@@ -532,7 +558,7 @@ const Test = () => {
 					</filter>
 				</defs>
 			</svg>
-			<a
+			{/* <a
 				className="bear-link"
 				href="https://twitter.com/intent/follow?screen_name=jh3yy"
 				target="_blank"
@@ -588,7 +614,7 @@ const Test = () => {
 						fill="currentColor"
 					></path>
 				</svg>
-			</a>
+			</a> */}
 		</>
 	);
 };
