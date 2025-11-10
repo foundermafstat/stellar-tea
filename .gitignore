@@ -39,7 +39,16 @@ lerna-debug.log*
 packages/*
 # if you have other workspace packages, add them here
 !packages/.gitkeep
+!packages/balls-token-client/
+!packages/balls-token-client/**
+!packages/stars-token-client/
+!packages/stars-token-client/**
+!packages/tea-game-client/
+!packages/tea-game-client/**
+!packages/tea-nft-client/
+!packages/tea-nft-client/**
 
 # generated contract client imports
 src/contracts/*
 !src/contracts/util.ts
+!src/contracts/clients.ts

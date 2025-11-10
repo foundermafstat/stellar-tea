@@ -13,5 +13,5 @@ export function shortenContractId(
   }
   const start = id.slice(0, prefixLength);
   const end = id.slice(-suffixLength);
-  return `${start}…${end}`;
+  return `${start}...${end}`;
 }
