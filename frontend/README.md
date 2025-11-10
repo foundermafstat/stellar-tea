@@ -2,7 +2,6 @@
 
 Generative NFT tooling for the Stellar Tea experience is implemented in this app:
 
-- NFT layer manifest loading from IPFS
 - Browser-side compositing of PNG layers and gradient overlays
 - IPFS uploads (Filebase) for rendered PNG + JSON metadata
 - Fusion helpers for mixing teas and minting through the Soroban contracts
@@ -19,13 +18,10 @@ Create `.env.local` in `frontend/` with:
 
 ```bash
 # Soroban / IPFS
-NEXT_PUBLIC_TEA_LAYERS_MANIFEST_CID=<CID with layers manifest JSON>
 NEXT_PUBLIC_IPFS_API_KEY=<Filebase basic token, e.g. MTJ...>
 NEXT_PUBLIC_IPFS_API_ENDPOINT=https://ipfs.filebase.io/api/v1   # optional override
 NEXT_PUBLIC_IPFS_GATEWAY_URL=https://ipfs.filebase.io           # optional override
 ```
-
-The manifest JSON must match the `LayersManifest` shape defined in `src/lib/nft/schema.ts`.
 
 ## Commands
 
@@ -37,14 +33,21 @@ pnpm test      # vitest unit tests for fusion helpers
 
 ## Generative Workflow
 
-1. Upload layer PNG/SVG assets to IPFS (Filebase recommended).
-2. Publish a manifest (CID referenced by `NEXT_PUBLIC_TEA_LAYERS_MANIFEST_CID`).
-3. Use `/mint` to:
-   - select layers
-   - tweak gradients and traits
-   - preview the rendered PNG
-   - upload PNG + metadata JSON to IPFS
-4. Consume the upload results with the Soroban contracts (`tea-nft` / `tea-game`) for minting or mixing.
+1. Place PNG/SVG layers under `public/nft/generate` (already bundled in the repo).
+2. Press the single mint button on `/mint`:
+   - the app randomly samples layers + flavour swatch
+   - pays **150 STARS** to the tea contract
+   - renders a 485×1000 PNG in the browser
+   - uploads PNG + metadata JSON to Filebase IPFS
+   - signs the Soroban mint transaction (`tea-nft`)
+3. Inspect the minted result in the on-chain collection or game contract.
+
+## Flavours & Metadata
+
+- `src/lib/nft/flavors.ts` — palette of 50 saturated colours with flavour names and tasting notes.
+- `src/lib/nft/metadataTemplate.ts` — helper that assembles titles, descriptions and infusions from the selected swatch.
+- `src/lib/nft/generator.ts` + `src/lib/nft/generateLocal.ts` — compose layers (base PNGs, SVG mask, topping, frame, highlights).
+- `src/lib/contracts/stars.ts` — handles the 150 STARS transfer before minting.
 
 ## Project Structure
 
@@ -53,7 +56,7 @@ pnpm test      # vitest unit tests for fusion helpers
 - `src/lib/nft/fusion-helpers.ts` – pure color/stat lineage helpers (tested).
 - `src/lib/nft/fusion.ts` – full fusion pipeline, including Soroban mint call.
 - `src/lib/ipfs/client.ts` – Filebase IPFS uploads (Blob + JSON).
-- `src/app/mint/page.tsx` – UI for composing and uploading NFTs.
+- `src/app/mint/page.tsx` – однокнопочный базовый минт (случайная генерация, загрузка, Soroban).
 
 ## Tests
 

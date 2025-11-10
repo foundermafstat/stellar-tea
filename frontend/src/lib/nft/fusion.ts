@@ -1,13 +1,7 @@
 "use client";
 
 import { createTeaNftClient, type TeaNftWalletSigner } from "@/lib/contracts/nft";
-import {
-  buildTeaMetadata,
-  type LineageSnapshot,
-  type TeaMetadata,
-  type LayerSnapshot,
-  toIpfsUri,
-} from "@/lib/nft";
+import { buildTeaMetadata, type TeaMetadata, type LayerSnapshot, toIpfsUri } from "@/lib/nft";
 import { renderTeaImage, type SelectedLayer } from "@/lib/nft/generator";
 import { uploadBlobToIpfs, uploadJsonToIpfs } from "@/lib/ipfs/client";
 import {
@@ -17,7 +11,7 @@ import {
   type FusionParentLike,
 } from "@/lib/nft/fusion-helpers";
 
-export interface FusionParent extends FusionParentLike {}
+export type FusionParent = FusionParentLike;
 
 export interface FusionRequest {
   seed: string;

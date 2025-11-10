@@ -65,9 +65,6 @@ importers:
       react-icons:
         specifier: ^5.5.0
         version: 5.5.0(react@19.2.0)
-      stars-token-client:
-        specifier: workspace:*
-        version: link:../packages/stars-token-client
       swap-client:
         specifier: workspace:*
         version: link:../packages/swap-client
@@ -131,8 +128,8 @@ importers:
   packages/stars-token-client:
     dependencies:
       '@stellar/stellar-sdk':
-        specifier: ^14.1.1
-        version: 14.3.1
+        specifier: ^13.x
+        version: 13.3.0
       buffer:
         specifier: 6.0.3
         version: 6.0.3

@@ -40,6 +40,12 @@ export interface RenderResult {
 const DEFAULT_GATEWAY = "https://ipfs.filebase.io";
 
 const toGatewayUrl = (cidOrUri: string, gatewayBase?: string) => {
+  if (cidOrUri.startsWith("http://") || cidOrUri.startsWith("https://")) {
+    return cidOrUri;
+  }
+  if (cidOrUri.startsWith("/")) {
+    return cidOrUri;
+  }
   const base = (gatewayBase ?? DEFAULT_GATEWAY).replace(/\/$/, "");
   const uri = toIpfsUri(cidOrUri);
   return uri.replace("ipfs://", `${base}/ipfs/`);

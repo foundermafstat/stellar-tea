@@ -38,6 +38,14 @@ pub enum DataKey {
     OwnerIndex(Address, u32),
 }
 
+pub trait BeverageMixer {
+    fn decide_winner(
+        env: &Env,
+        offer: &MixOffer,
+        token_b_id: u64,
+    ) -> Result<(Address, Address), GameError>;
+}
+
 pub fn next_id(env: &Env) -> u64 {
     let mut seq = env
         .storage()

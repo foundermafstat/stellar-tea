@@ -68,6 +68,8 @@ export const createTeaNftClient = ({ publicKey, signer }: CreateClientParams = {
   });
 };
 
+export const getTeaContractId = () => resolveContractId();
+
 export type OwnedTeaToken = {
   tokenId: number;
   metadata: TeaMetadata;

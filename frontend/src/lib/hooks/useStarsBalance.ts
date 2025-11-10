@@ -57,12 +57,12 @@ export const useStarsBalance = (address?: string | null) => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      const client = createStarsClient();
-      const metadataTx = await client.metadata();
-      const [decimals] = metadataTx.result ?? [INITIAL_STATE.decimals, "", ""];
+      const client = await createStarsClient();
+      const { result: metadataResult } = await client.metadata();
+      const [decimals] = metadataResult ?? [INITIAL_STATE.decimals, "", ""];
 
-      const balanceTx = await client.balance({ id: address });
-      const raw = unwrapResult(balanceTx.result);
+      const { result: balanceResult } = await client.balance({ id: address });
+      const raw = unwrapResult(balanceResult);
 
       setState({
         raw,
