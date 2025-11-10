@@ -1,0 +1,794 @@
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Symbol, Vec};
+
+use crate::{
+    config,
+    errors::GameError,
+    events, limits,
+    marketplace::{self, Listing, PaymentToken},
+    mixing::{self, MixOffer, OfferStatus},
+    rewards,
+    tea::{TeaMetadata, TeaStats},
+    util,
+};
+
+const MARKET_FEE_BPS: i128 = 300; // 3%
+const BURN_FEE_BPS: i128 = 200; // 2% burn from marketplace fees
+const MIX_BURN_PERCENT: i128 = 40; // 40% of mix fees burned
+const LOSER_COMPENSATION_PERCENT: i128 = 80;
+const UPGRADE_LEVEL_INCREMENT: u32 = 1;
+const DAILY_BALLS_REWARD: i128 = 2_000_000; // 0.02 with 8 decimals
+const DAILY_STARS_REWARD: i128 = 200_000; // 0.002 with 8 decimals
+
+#[derive(Clone)]
+#[soroban_sdk::contracttype]
+pub struct Recipe {
+    pub id: u32,
+    pub name: String,
+    pub flavor_profile: String,
+    pub base_level: u32,
+    pub base_rarity: u32,
+    pub balls_cost: i128,
+    pub stars_cost: i128,
+    pub base_stats: TeaStats,
+    pub image_uri: String,
+}
+
+#[derive(Clone)]
+#[soroban_sdk::contracttype]
+enum DataKey {
+    Recipe(u32),
+}
+
+fn get_recipe(env: &Env, recipe_id: u32) -> Result<Recipe, GameError> {
+    env.storage()
+        .instance()
+        .get::<DataKey, Recipe>(&DataKey::Recipe(recipe_id))
+        .ok_or(GameError::OfferNotFound)
+}
+
+fn put_recipe(env: &Env, recipe: &Recipe) {
+    env.storage()
+        .instance()
+        .set(&DataKey::Recipe(recipe.id), recipe);
+}
+
+fn ensure_authorized_player(_env: &Env, player: &Address) -> Result<(), GameError> {
+    player.require_auth();
+    Ok(())
+}
+
+fn compose_metadata(env: &Env, recipe: &Recipe, offer: &MixOffer) -> TeaMetadata {
+    let mut lineage = Vec::new(env);
+    lineage.push_back(offer.token_a_id);
+    if let Some(token_b) = offer.token_b_id {
+        lineage.push_back(token_b);
+    }
+    TeaMetadata {
+        display_name: recipe.name.clone(),
+        flavor_profile: offer.desired_profile.clone(),
+        rarity: recipe.base_rarity,
+        level: recipe.base_level,
+        infusion: String::from_str(env, "fusion"),
+        stats: recipe.base_stats.clone(),
+        lineage,
+        image_uri: recipe.image_uri.clone(),
+    }
+}
+
+fn payment_symbol(env: &Env, label: &str) -> Symbol {
+    Symbol::new(env, label)
+}
+
+fn assert_payment(amount: i128) -> Result<(), GameError> {
+    if amount <= 0 {
+        return Err(GameError::InvalidInput);
+    }
+    Ok(())
+}
+
+#[contract]
+pub struct StellarTeaGame;
+
+#[contractimpl]
+impl StellarTeaGame {
+    pub fn __constructor(
+        env: Env,
+        admin: Address,
+        treasury: Address,
+        balls_token: Address,
+        stars_token: Address,
+        tea_nft: Address,
+        dex: Option<Address>,
+    ) {
+        config::init(
+            &env,
+            &admin,
+            &treasury,
+            &balls_token,
+            &stars_token,
+            &tea_nft,
+            &dex,
+        );
+    }
+
+    pub fn upsert_recipe(
+        env: Env,
+        recipe_id: u32,
+        name: String,
+        flavor_profile: String,
+        base_level: u32,
+        base_rarity: u32,
+        balls_cost: i128,
+        stars_cost: i128,
+        base_stats: TeaStats,
+        image_uri: String,
+    ) -> Result<(), GameError> {
+        config::require_admin(&env);
+        let recipe = Recipe {
+            id: recipe_id,
+            name,
+            flavor_profile,
+            base_level,
+            base_rarity,
+            balls_cost,
+            stars_cost,
+            base_stats,
+            image_uri,
+        };
+        put_recipe(&env, &recipe);
+        env.events().publish(("recipe_upserted",), (recipe_id,));
+        Ok(())
+    }
+
+    pub fn set_daily_limit(
+        env: Env,
+        user: Address,
+        limit_type: Symbol,
+        value: i128,
+    ) -> Result<(), GameError> {
+        config::require_admin(&env);
+        assert_payment(value)?;
+        limits::set_limit(&env, &user, &limit_type, value);
+        Ok(())
+    }
+
+    pub fn burn_tokens(
+        env: Env,
+        from: Address,
+        balls: Option<i128>,
+        stars: Option<i128>,
+    ) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &from)?;
+        let cfg = config::get(&env);
+        if let Some(amount) = balls {
+            assert_payment(amount)?;
+            util::burn(&env, &cfg.balls_token, &from, amount);
+        }
+        if let Some(amount) = stars {
+            assert_payment(amount)?;
+            util::burn(&env, &cfg.stars_token, &from, amount);
+        }
+        env.events().publish(("manual_burn",), (from, balls, stars));
+        Ok(())
+    }
+
+    pub fn create_mix_offer(
+        env: Env,
+        owner: Address,
+        recipe_id: u32,
+        token_a_id: u64,
+        desired_profile: String,
+        min_rank: u32,
+        fee_balls: i128,
+        fee_stars: i128,
+        deadline: u64,
+    ) -> Result<u64, GameError> {
+        ensure_authorized_player(&env, &owner)?;
+        assert_payment(fee_balls)?;
+        let cfg = config::get(&env);
+        let offer_id = mixing::next_id(&env);
+        let now = env.ledger().timestamp();
+        if deadline <= now {
+            return Err(GameError::InvalidInput);
+        }
+        let _ = get_recipe(&env, recipe_id)?;
+        if mixing::get_by_owner_recipe(&env, &owner, recipe_id).is_some() {
+            return Err(GameError::InvalidInput);
+        }
+
+        // escrow NFT and tokens
+        util::transfer_tea(
+            &env,
+            &cfg.tea_nft,
+            &owner,
+            &env.current_contract_address(),
+            token_a_id,
+        );
+
+        util::transfer_from(
+            &env,
+            &cfg.balls_token,
+            &owner,
+            &env.current_contract_address(),
+            fee_balls,
+        );
+
+        if fee_stars > 0 {
+            util::transfer_from(
+                &env,
+                &cfg.stars_token,
+                &owner,
+                &env.current_contract_address(),
+                fee_stars,
+            );
+        }
+
+        let offer = MixOffer {
+            owner_a: owner.clone(),
+            token_a_id,
+            owner_b: None,
+            token_b_id: None,
+            desired_profile,
+            min_rank,
+            recipe_id,
+            fee_balls,
+            fee_stars,
+            partner_fee_balls: 0,
+            partner_fee_stars: 0,
+            status: OfferStatus::WaitingForPartner,
+            created_at: now,
+            deadline,
+        };
+        mixing::put(&env, offer_id, &offer);
+        mixing::set_owner_index(&env, &owner, recipe_id, offer_id);
+        env.events()
+            .publish(("mix_offer_created",), (owner, offer_id, recipe_id));
+        Ok(offer_id)
+    }
+
+    pub fn accept_mix_offer(
+        env: Env,
+        offer_id: u64,
+        partner: Address,
+        token_b_id: u64,
+        fee_balls: i128,
+        fee_stars: i128,
+    ) -> Result<u64, GameError> {
+        ensure_authorized_player(&env, &partner)?;
+        assert_payment(fee_balls)?;
+        let cfg = config::get(&env);
+        let mut offer = mixing::get(&env, offer_id)?;
+        if offer.status != OfferStatus::WaitingForPartner {
+            return Err(GameError::OfferClosed);
+        }
+        if env.ledger().timestamp() > offer.deadline {
+            return Err(GameError::Expired);
+        }
+
+        util::transfer_tea(
+            &env,
+            &cfg.tea_nft,
+            &partner,
+            &env.current_contract_address(),
+            token_b_id,
+        );
+
+        util::transfer_from(
+            &env,
+            &cfg.balls_token,
+            &partner,
+            &env.current_contract_address(),
+            fee_balls,
+        );
+        if fee_stars > 0 {
+            util::transfer_from(
+                &env,
+                &cfg.stars_token,
+                &partner,
+                &env.current_contract_address(),
+                fee_stars,
+            );
+        }
+
+        offer.owner_b = Some(partner.clone());
+        offer.token_b_id = Some(token_b_id);
+        offer.partner_fee_balls = fee_balls;
+        offer.partner_fee_stars = fee_stars;
+        offer.status = OfferStatus::ReadyToMix;
+        mixing::put(&env, offer_id, &offer);
+
+        let result = StellarTeaGame::mix_tea(
+            env.clone(),
+            offer.owner_a.clone(),
+            offer.recipe_id,
+            offer.fee_balls + offer.partner_fee_balls,
+            Some(offer.fee_stars + offer.partner_fee_stars),
+        )?;
+        env.events()
+            .publish(("mix_offer_completed",), (offer_id, partner, result));
+        Ok(result)
+    }
+
+    pub fn cancel_mix_offer(env: Env, owner: Address, recipe_id: u32) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &owner)?;
+        let cfg = config::get(&env);
+        let offer_id =
+            mixing::get_by_owner_recipe(&env, &owner, recipe_id).ok_or(GameError::OfferNotFound)?;
+        let offer = mixing::get(&env, offer_id)?;
+        if offer.status != OfferStatus::WaitingForPartner {
+            return Err(GameError::OfferClosed);
+        }
+
+        util::transfer_tea(
+            &env,
+            &cfg.tea_nft,
+            &env.current_contract_address(),
+            &owner,
+            offer.token_a_id,
+        );
+
+        util::transfer(
+            &env,
+            &cfg.balls_token,
+            &env.current_contract_address(),
+            &owner,
+            offer.fee_balls,
+        );
+        if offer.fee_stars > 0 {
+            util::transfer(
+                &env,
+                &cfg.stars_token,
+                &env.current_contract_address(),
+                &owner,
+                offer.fee_stars,
+            );
+        }
+
+        mixing::remove(&env, offer_id);
+        mixing::clear_owner_index(&env, &owner, recipe_id);
+        env.events()
+            .publish(("mix_offer_cancelled",), (owner, recipe_id));
+        Ok(())
+    }
+
+    pub fn mix_tea(
+        env: Env,
+        owner: Address,
+        recipe_id: u32,
+        balls: i128,
+        stars: Option<i128>,
+    ) -> Result<u64, GameError> {
+        let offer_id =
+            mixing::get_by_owner_recipe(&env, &owner, recipe_id).ok_or(GameError::OfferNotFound)?;
+        let offer = mixing::get(&env, offer_id)?;
+        if offer.status != OfferStatus::ReadyToMix {
+            return Err(GameError::NotReady);
+        }
+        if offer.recipe_id != recipe_id {
+            return Err(GameError::InvalidInput);
+        }
+        let cfg = config::get(&env);
+        let partner = offer.owner_b.clone().ok_or(GameError::NotReady)?;
+        let token_b_id = offer.token_b_id.ok_or(GameError::NotReady)?;
+        let recipe = get_recipe(&env, recipe_id)?;
+
+        let expected_balls = offer.fee_balls + offer.partner_fee_balls;
+        let expected_stars = offer.fee_stars + offer.partner_fee_stars;
+        if balls != expected_balls {
+            return Err(GameError::InvalidInput);
+        }
+        if stars.unwrap_or(0) != expected_stars {
+            return Err(GameError::InvalidInput);
+        }
+
+        let total_balls = balls;
+        let total_stars = expected_stars;
+        let burn_balls = total_balls * MIX_BURN_PERCENT / 100;
+        let burn_stars = total_stars * MIX_BURN_PERCENT / 100;
+        let loser_reward = offer.partner_fee_balls * LOSER_COMPENSATION_PERCENT / 100;
+        let treasury_share = total_balls - burn_balls - loser_reward;
+
+        // burn NFTs from escrow
+        util::burn_tea(
+            &env,
+            &cfg.tea_nft,
+            &env.current_contract_address(),
+            offer.token_a_id,
+        );
+        util::burn_tea(
+            &env,
+            &cfg.tea_nft,
+            &env.current_contract_address(),
+            token_b_id,
+        );
+
+        // mint new NFT
+        let metadata = compose_metadata(&env, &recipe, &offer);
+        let new_token_id = util::mint_tea(&env, &cfg.tea_nft, &owner, metadata);
+
+        // burn part of the fees
+        if burn_balls > 0 {
+            util::burn(
+                &env,
+                &cfg.balls_token,
+                &env.current_contract_address(),
+                burn_balls,
+            );
+        }
+        if burn_stars > 0 {
+            util::burn(
+                &env,
+                &cfg.stars_token,
+                &env.current_contract_address(),
+                burn_stars,
+            );
+        }
+
+        // pay loser compensation
+        if loser_reward > 0 {
+            util::transfer(
+                &env,
+                &cfg.balls_token,
+                &env.current_contract_address(),
+                &partner,
+                loser_reward,
+            );
+        }
+
+        // send treasury share
+        if treasury_share > 0 {
+            util::transfer(
+                &env,
+                &cfg.balls_token,
+                &env.current_contract_address(),
+                &cfg.treasury,
+                treasury_share,
+            );
+        }
+
+        // distribute remaining stars to treasury
+        if total_stars > 0 && total_stars > burn_stars {
+            let stars_to_treasury = total_stars - burn_stars;
+            util::transfer(
+                &env,
+                &cfg.stars_token,
+                &env.current_contract_address(),
+                &cfg.treasury,
+                stars_to_treasury,
+            );
+        }
+
+        mixing::remove(&env, offer_id);
+        mixing::clear_owner_index(&env, &owner, recipe_id);
+        env.events()
+            .publish(("mix_completed",), (owner, partner, new_token_id));
+        Ok(new_token_id)
+    }
+
+    pub fn upgrade_tea(
+        env: Env,
+        owner: Address,
+        nft_id: u64,
+        balls: i128,
+        stars: i128,
+    ) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &owner)?;
+        assert_payment(balls)?;
+        assert_payment(stars)?;
+        let cfg = config::get(&env);
+        let token_owner = util::owner_of(&env, &cfg.tea_nft, nft_id);
+        if token_owner != owner {
+            return Err(GameError::NotOwner);
+        }
+
+        util::transfer_from(
+            &env,
+            &cfg.balls_token,
+            &owner,
+            &env.current_contract_address(),
+            balls,
+        );
+        util::transfer_from(
+            &env,
+            &cfg.stars_token,
+            &owner,
+            &env.current_contract_address(),
+            stars,
+        );
+
+        let burn_balls = balls / 2;
+        let burn_stars = stars / 2;
+        util::burn(
+            &env,
+            &cfg.balls_token,
+            &env.current_contract_address(),
+            burn_balls,
+        );
+        util::burn(
+            &env,
+            &cfg.stars_token,
+            &env.current_contract_address(),
+            burn_stars,
+        );
+        util::transfer(
+            &env,
+            &cfg.balls_token,
+            &env.current_contract_address(),
+            &cfg.treasury,
+            balls - burn_balls,
+        );
+        util::transfer(
+            &env,
+            &cfg.stars_token,
+            &env.current_contract_address(),
+            &cfg.treasury,
+            stars - burn_stars,
+        );
+
+        let mut metadata = util::get_tea_metadata(&env, &cfg.tea_nft, nft_id);
+        metadata.level += UPGRADE_LEVEL_INCREMENT;
+        metadata.rarity += 1;
+        metadata.stats.body += 5;
+        metadata.stats.caffeine += 3;
+        metadata.stats.sweetness += 2;
+        util::update_tea_metadata(&env, &cfg.tea_nft, nft_id, metadata);
+        env.events()
+            .publish(("tea_upgraded",), (owner, nft_id, balls, stars));
+        Ok(())
+    }
+
+    pub fn list_nft(
+        env: Env,
+        seller: Address,
+        token_id: u64,
+        price: i128,
+        payment_token: PaymentToken,
+    ) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &seller)?;
+        assert_payment(price)?;
+        let cfg = config::get(&env);
+        let actual_owner = util::owner_of(&env, &cfg.tea_nft, token_id);
+        if actual_owner != seller {
+            return Err(GameError::NotOwner);
+        }
+
+        util::transfer_tea(
+            &env,
+            &cfg.tea_nft,
+            &seller,
+            &env.current_contract_address(),
+            token_id,
+        );
+
+        let listing = Listing {
+            seller: seller.clone(),
+            price,
+            payment_token,
+            created_at: env.ledger().timestamp(),
+        };
+        marketplace::set(&env, token_id, &listing);
+        env.events()
+            .publish(("nft_listed",), (seller, token_id, price));
+        Ok(())
+    }
+
+    pub fn delist_nft(env: Env, seller: Address, token_id: u64) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &seller)?;
+        let cfg = config::get(&env);
+        let listing = marketplace::get(&env, token_id)?;
+        if listing.seller != seller {
+            return Err(GameError::Unauthorized);
+        }
+
+        util::transfer_tea(
+            &env,
+            &cfg.tea_nft,
+            &env.current_contract_address(),
+            &seller,
+            token_id,
+        );
+        marketplace::remove(&env, token_id);
+        env.events().publish(("nft_delisted",), (seller, token_id));
+        Ok(())
+    }
+
+    pub fn buy_nft(env: Env, buyer: Address, token_id: u64) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &buyer)?;
+        let cfg = config::get(&env);
+        let listing = marketplace::get(&env, token_id)?;
+
+        let payment_token_address = match listing.payment_token {
+            PaymentToken::Balls => cfg.balls_token.clone(),
+            PaymentToken::Stars => cfg.stars_token.clone(),
+        };
+
+        util::transfer_from(
+            &env,
+            &payment_token_address,
+            &buyer,
+            &env.current_contract_address(),
+            listing.price,
+        );
+
+        let fee = listing.price * MARKET_FEE_BPS / 10_000;
+        let burn_amount = listing.price * BURN_FEE_BPS / 10_000;
+        let seller_amount = listing.price - fee;
+        let treasury_amount = fee - burn_amount;
+
+        if burn_amount > 0 {
+            util::burn(
+                &env,
+                &payment_token_address,
+                &env.current_contract_address(),
+                burn_amount,
+            );
+        }
+        if treasury_amount > 0 {
+            util::transfer(
+                &env,
+                &payment_token_address,
+                &env.current_contract_address(),
+                &cfg.treasury,
+                treasury_amount,
+            );
+        }
+
+        util::transfer(
+            &env,
+            &payment_token_address,
+            &env.current_contract_address(),
+            &listing.seller,
+            seller_amount,
+        );
+
+        util::transfer_tea(
+            &env,
+            &cfg.tea_nft,
+            &env.current_contract_address(),
+            &buyer,
+            token_id,
+        );
+        marketplace::remove(&env, token_id);
+        env.events().publish(
+            ("nft_purchased",),
+            (buyer, listing.seller, token_id, listing.price),
+        );
+        Ok(())
+    }
+
+    pub fn claim_daily(env: Env, player: Address) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &player)?;
+        rewards::ensure_claimable(&env, &player)?;
+
+        let cfg = config::get(&env);
+        let limit_symbol = symbol_short!("daily");
+        limits::consume(&env, &player, &limit_symbol, 1)?;
+
+        let daily_cap = config::daily_cap(&env).unwrap_or(i128::MAX);
+        if DAILY_BALLS_REWARD > daily_cap {
+            return Err(GameError::LimitExceeded);
+        }
+
+        util::mint(&env, &cfg.balls_token, &player, DAILY_BALLS_REWARD);
+        util::mint(&env, &cfg.stars_token, &player, DAILY_STARS_REWARD);
+        rewards::record_claim(&env, &player);
+        env.events().publish(
+            ("daily_claimed",),
+            (player, DAILY_BALLS_REWARD, DAILY_STARS_REWARD),
+        );
+        Ok(())
+    }
+
+    pub fn join_event(
+        env: Env,
+        player: Address,
+        event_id: u32,
+        stake: i128,
+    ) -> Result<(), GameError> {
+        ensure_authorized_player(&env, &player)?;
+        assert_payment(stake)?;
+        let cfg = config::get(&env);
+        let mut event = events::get(&env, event_id)?;
+        events::ensure_active(&event, &env)?;
+        if stake < event.stake {
+            return Err(GameError::InsufficientPayment);
+        }
+
+        util::transfer_from(
+            &env,
+            &cfg.stars_token,
+            &player,
+            &env.current_contract_address(),
+            stake,
+        );
+        event.participants.push_back(player.clone());
+        event.reward_pool += stake;
+        events::set(&env, event_id, &event);
+        env.events()
+            .publish(("event_joined",), (player, event_id, stake));
+        Ok(())
+    }
+
+    pub fn finish_event(env: Env, caller: Address, event_id: u32) -> Result<(), GameError> {
+        let cfg = config::get(&env);
+        let mut event = events::get(&env, event_id)?;
+        if caller != event.organizer {
+            config::require_admin(&env);
+        } else {
+            caller.require_auth();
+        }
+        if event.finished {
+            return Err(GameError::OfferClosed);
+        }
+
+        let participant_count = event.participants.len();
+        if participant_count == 0 {
+            event.finished = true;
+            events::set(&env, event_id, &event);
+            return Ok(());
+        }
+        let burn_amount = event.reward_pool / 10;
+        if burn_amount > 0 {
+            util::burn(
+                &env,
+                &cfg.stars_token,
+                &env.current_contract_address(),
+                burn_amount,
+            );
+        }
+        let distributable = event.reward_pool - burn_amount;
+        let share = distributable / participant_count as i128;
+        for participant in event.participants.iter() {
+            util::transfer(
+                &env,
+                &cfg.stars_token,
+                &env.current_contract_address(),
+                &participant,
+                share,
+            );
+        }
+        let remainder = distributable - share * participant_count as i128;
+        if remainder > 0 {
+            util::transfer(
+                &env,
+                &cfg.stars_token,
+                &env.current_contract_address(),
+                &cfg.treasury,
+                remainder,
+            );
+        }
+        event.finished = true;
+        events::set(&env, event_id, &event);
+        env.events().publish(
+            ("event_finished",),
+            (event_id, participant_count as u32, share),
+        );
+        Ok(())
+    }
+
+    pub fn create_event(
+        env: Env,
+        organizer: Address,
+        event_id: u32,
+        stake: i128,
+        deadline: u64,
+    ) -> Result<(), GameError> {
+        config::require_admin(&env);
+        if deadline <= env.ledger().timestamp() {
+            return Err(GameError::InvalidInput);
+        }
+        let participants = Vec::new(&env);
+        let event = events::Event {
+            organizer,
+            stake,
+            reward_pool: 0,
+            participants,
+            deadline,
+            finished: false,
+        };
+        events::set(&env, event_id, &event);
+        env.events()
+            .publish(("event_created",), (event_id, stake, deadline));
+        Ok(())
+    }
+}

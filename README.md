@@ -109,3 +109,24 @@ my-project/                      # Your initialized project
 ```
 
 This template provides a ready-to-use frontend application with example smart contracts and their TypeScript clients. You can use these as reference while building your own contracts and UI. The frontend is set up with Vite, React, and includes basic components for interacting with the contracts.
+
+## Stellar Tea Game Suite
+
+This branch extends the scaffold with a full on-chain economy for **Stellar Tea**, a Play-to-Earn tea blending experience on Soroban.
+
+- **Tokens**
+  - `contracts/tokens/balls` — utility token (BALLS) with fixed initial supply `100_000_000_000 * 10^8`, admin-controlled mint/burn, and transfer helpers.
+  - `contracts/tokens/stars` — premium token (STARS) mirroring the same SEP-41 surface with a reduced supply (`10_000_000_000 * 10^8`).
+- **NFT Collection**
+  - `contracts/nft-tea` — enumerable and burnable tea NFTs with rich metadata (flavor profile, stats, genealogy). An admin can delegate a game operator that mints, upgrades, updates lineage, and orchestrates burns for crafting.
+- **Core Gameplay**
+  - `contracts/game` — orchestrates all game mechanics: crafting, marketplace escrow, daily rewards, event stakes, deflationary burns, and daily limits. It coordinates cross-contract calls with the token and NFT contracts via helper utilities.
+
+Key gameplay flows:
+
+1. **Mixing Offers** — players post mix offers storing escrowed NFTs/Tokens; partners accept to trigger `mix_tea`, burning inputs, minting upgraded blends, paying treasury shares, and compensating participants.
+2. **Upgrades** — STARS/BALLS are consumed to level an existing tea NFT while updating its metadata and stats.
+3. **Marketplace** — custodial listings priced in BALLS or STARS with configurable fee/burn splits and automatic escrow handling.
+4. **Engagement Loops** — daily claims with per-user limits, event staking with pooled redistribution, and opt-in burn endpoints for manual sinks.
+
+See `contracts/game/src/contract.rs` for the Soroban API surface (mixing, upgrades, market, rewards, events, limits, burns) and consult the Rust tests under each crate for sample usage.

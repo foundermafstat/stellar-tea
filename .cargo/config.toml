@@ -1,0 +1,6 @@
+[build]
+target = "wasm32v1-none"
+
+[target.wasm32v1-none]
+rustflags = ["-C", "target-feature=-bulk-memory"]
+
