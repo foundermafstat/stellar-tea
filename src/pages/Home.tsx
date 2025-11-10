@@ -15,10 +15,15 @@ import {
   PiClockCountdownDuotone,
 } from "react-icons/pi";
 
-const heroImages = [
-  "/design/images/Layer 6.png",
+const heroImage = {
+  src: "/design/images/Layer 6.png",
+  alt: "Immersive Stellar Tea concept art",
+};
+
+const sectionImages = [
   "/design/images/Layer 7.png",
-  "/design/images/Layer 8.png",
+  "/design/images/Layer 5.png",
+  "/design/images/Layer 9.png",
 ];
 
 const nftImages = [
@@ -241,22 +246,13 @@ const Home = () => {
             </div>
           </div>
           <div className="relative flex flex-1 justify-center">
-            <div className="relative flex h-[340px] w-[340px] items-center justify-center rounded-full bg-gradient-to-tr from-primary/25 via-secondary/15 to-accent/25 shadow-confection">
-              {heroImages.map((src, index) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt="Confectionary swirl"
-                  data-hero-animate
-                  className={cn(
-                    "absolute h-[240px] w-[240px] object-contain opacity-80 mix-blend-multiply transition duration-700",
-                    index === 0 && "rotate-0",
-                    index === 1 && "-rotate-6",
-                    index === 2 && "rotate-12",
-                  )}
-                  style={{ animationDelay: `${index * 0.15}s` }}
-                />
-              ))}
+            <div className="relative w-full max-w-3xl">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/25 via-secondary/15 to-transparent blur-3xl" />
+              <img
+                src={encodeURI(heroImage.src)}
+                alt={heroImage.alt}
+                className="relative z-10 w-full rounded-[40px] border border-border/30 object-cover"
+              />
             </div>
           </div>
         </div>
@@ -344,9 +340,9 @@ const Home = () => {
               <div className="flex flex-1 items-center justify-center">
                 <div className="relative flex h-[280px] w-full max-w-[360px] items-center justify-center overflow-hidden rounded-[32px] bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20">
                   <img
-                    src={heroImages[index % heroImages.length]}
+                    src={sectionImages[index % sectionImages.length]}
                     alt={`${title} visual`}
-                    className="h-full w-full object-cover opacity-70 mix-blend-multiply"
+                    className="h-full w-full object-cover opacity-80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-tr from-card/70 via-transparent to-card/30" />
                 </div>

@@ -14,11 +14,14 @@ export default tseslint.config(
     "packages",
     "src/contracts/*",
     "!src/contracts/util.ts",
+    ".next/**",
+    "frontend/.next/**",
+    "frontend/node_modules/**",
   ]),
   {
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommendedTypeChecked,
+      tseslint.configs.recommended,
       reactDOM.configs.recommended,
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
@@ -30,7 +33,6 @@ export default tseslint.config(
       ecmaVersion: 2020,
       globals: globals.browser,
       parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRoot: import.meta.dirname,
       },
     },

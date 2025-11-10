@@ -1,5 +1,5 @@
-import { Link, NavLink } from "react-router-dom";
-import { memo, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { memo } from "react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -7,15 +7,12 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import WalletMenu from "./WalletMenu";
 import {
   PiGameControllerDuotone,
   PiHandshakeDuotone,
-  PiSparkleDuotone,
-  PiRocketLaunchDuotone,
   PiMedalDuotone,
+  PiRocketLaunchDuotone,
 } from "react-icons/pi";
 
 const logoUrl = new URL(
@@ -63,13 +60,6 @@ const economyLinks = [
   },
 ];
 
-const contractLinks = [
-  { label: "BALLS Token", to: "/contracts/balls" },
-  { label: "STARS Token", to: "/contracts/stars" },
-  { label: "Tea NFT", to: "/contracts/tea-nft" },
-  { label: "Tea Game", to: "/contracts/tea-game" },
-];
-
 const hashLink = (hash: string) => ({ pathname: "/", hash });
 
 const maskStyle = {
@@ -85,15 +75,15 @@ const LogoMark = memo(() => (
   <Link to="/" className="group inline-flex items-center gap-3 text-primary">
     <span
       aria-hidden
-      className="h-10 w-10 rounded-3xl bg-current shadow-confection transition-transform duration-500 group-hover:rotate-6 group-hover:scale-105"
+      className="h-10 w-10 bg-current shadow-confection transition-transform duration-500 group-hover:rotate-6 group-hover:scale-105"
       style={maskStyle}
     />
     <span className="flex flex-col leading-tight">
-      <span className="font-display text-xl uppercase tracking-[0.2em] text-foreground">
+      <span className="logo text-xl font-black uppercase tracking-[0.12em] text-foreground">
         Stellar Tea
       </span>
       <span className="text-xs text-muted-foreground">
-        Sweet Web3 Confectionery
+        Play-to-earn tealchemy
       </span>
     </span>
   </Link>
@@ -141,76 +131,25 @@ const ContractLinks = () => (
     <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
       Contracts
     </span>
-    <div className="flex flex-col gap-1">
-      {contractLinks.map(({ label, to }) => (
-        <NavLink
+    <div className="flex flex-col gap-2">
+      {[
+        { label: "BALLS Token", to: "/contracts/balls" },
+        { label: "STARS Token", to: "/contracts/stars" },
+        { label: "Tea NFT", to: "/contracts/tea-nft" },
+        { label: "Tea Game", to: "/contracts/tea-game" },
+      ].map(({ label, to }) => (
+        <Link
           key={to}
           to={to}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center justify-between rounded-2xl px-4 py-2 text-sm transition-colors",
-              isActive
-                ? "bg-primary/15 text-primary"
-                : "hover:bg-primary/10 hover:text-primary",
-            )
-          }
+          className="flex items-center justify-between rounded-2xl bg-card/80 px-4 py-2 text-sm text-foreground transition hover:bg-primary/10 hover:text-primary"
         >
           {label}
           <PiRocketLaunchDuotone className="h-4 w-4 opacity-60" />
-        </NavLink>
+        </Link>
       ))}
     </div>
   </div>
 );
-
-const PageLinks = memo(() => {
-  const quickLinks = useMemo(
-    () => [
-      { label: "Home", to: "/" },
-      { label: "Debugger", to: "/debug" },
-      {
-        label: "Docs",
-        to: "https://github.com/stellar/scaffold-stellar",
-        external: true,
-      },
-    ],
-    [],
-  );
-
-  return (
-    <nav className="hidden items-center gap-1 lg:flex">
-      {quickLinks.map((link) =>
-        link.external ? (
-          <a
-            key={link.label}
-            href={link.to}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            {link.label}
-          </a>
-        ) : (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition-all",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
-              )
-            }
-          >
-            {link.label}
-          </NavLink>
-        ),
-      )}
-    </nav>
-  );
-});
-PageLinks.displayName = "PageLinks";
 
 const AppHeader = () => {
   return (
@@ -221,26 +160,26 @@ const AppHeader = () => {
           <NavigationMenu className="hidden lg:flex">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="rounded-full bg-card/70 px-5">
+                <NavigationMenuTrigger className="rounded-full bg-card/80 px-5 shadow-sm ring-1 ring-border/30 hover:bg-card/90">
                   Overview
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
+                <NavigationMenuContent className="rounded-3xl border border-border/40 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
                   <OverviewGrid />
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="rounded-full bg-card/70 px-5">
+                <NavigationMenuTrigger className="rounded-full bg-card/80 px-5 shadow-sm ring-1 ring-border/30 hover:bg-card">
                   Economy
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
+                <NavigationMenuContent className="rounded-3xl border border-border/40 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
                   <EconomyList />
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="rounded-full bg-card/70 px-5">
+                <NavigationMenuTrigger className="rounded-full bg-card/80 px-5 shadow-sm ring-1 ring-border/30 hover:bg-card">
                   Contracts
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
+                <NavigationMenuContent className="rounded-3xl border border-border/40 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
                   <ContractLinks />
                 </NavigationMenuContent>
               </NavigationMenuItem>
@@ -248,14 +187,6 @@ const AppHeader = () => {
           </NavigationMenu>
         </div>
         <div className="flex items-center gap-4">
-          <PageLinks />
-          <Button
-            variant="ghost"
-            className="hidden rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20 lg:inline-flex"
-          >
-            <PiSparkleDuotone className="mr-2 h-4 w-4" />
-            Watch trailer
-          </Button>
           <WalletMenu />
         </div>
       </div>

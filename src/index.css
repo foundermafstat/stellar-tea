@@ -1,50 +1,49 @@
 @import "@fontsource-variable/montserrat";
+@import "@fontsource/alumni-sans/200.css";
+@import "@fontsource/alumni-sans/900.css";
 @import "@fontsource/sour-gummy/400.css";
 
 @import "tailwindcss";
 
-@plugin "tailwindcss-animate";
-
-@custom-variant dark (&:is(.dark *));
-
 :root {
   color-scheme: light;
-  --background: 48 92% 94%;
-  --foreground: 318 25% 20%;
-  --muted: 42 56% 92%;
-  --muted-foreground: 315 18% 36%;
-  --popover: 46 100% 98%;
-  --popover-foreground: 318 32% 24%;
-  --card: 46 100% 97%;
-  --card-foreground: 320 28% 18%;
-  --border: 45 64% 85%;
-  --input: 45 70% 86%;
-  --primary: 297 77% 60%;
-  --primary-foreground: 46 100% 98%;
-  --secondary: 325 76% 66%;
-  --secondary-foreground: 46 100% 98%;
-  --accent: 272 77% 68%;
-  --accent-foreground: 46 100% 98%;
+  --background: 336 82% 96%;
+  --foreground: 318 32% 20%;
+  --muted: 330 56% 93%;
+  --muted-foreground: 317 22% 38%;
+  --popover: 330 90% 98%;
+  --popover-foreground: 318 36% 22%;
+  --card: 332 88% 97%;
+  --card-foreground: 320 32% 20%;
+  --border: 332 54% 88%;
+  --input: 332 60% 88%;
+  --primary: 327 84% 62%;
+  --primary-foreground: 340 100% 98%;
+  --secondary: 280 72% 68%;
+  --secondary-foreground: 340 100% 98%;
+  --accent: 260 76% 70%;
+  --accent-foreground: 340 100% 98%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 46 100% 98%;
-  --ring: 297 77% 60%;
+  --destructive-foreground: 342 100% 98%;
+  --ring: 327 84% 62%;
   --radius: 1.25rem;
-  --chart-1: 297 77% 60%;
-  --chart-2: 325 76% 66%;
-  --chart-3: 272 77% 68%;
-  --chart-4: 41 93% 62%;
-  --chart-5: 17 90% 64%;
-  --sidebar: 46 100% 97%;
-  --sidebar-foreground: 318 25% 20%;
-  --sidebar-primary: 297 77% 60%;
-  --sidebar-primary-foreground: 46 100% 98%;
-  --sidebar-accent: 325 76% 66%;
-  --sidebar-accent-foreground: 46 100% 98%;
-  --sidebar-border: 47 64% 82%;
-  --sidebar-ring: 297 77% 60%;
-  background-color: #fff6d6;
-  color: #4a243d;
-  font-family: "Montserrat Variable", "Montserrat", "Segoe UI", sans-serif;
+  --chart-1: 327 84% 62%;
+  --chart-2: 300 76% 64%;
+  --chart-3: 280 72% 68%;
+  --chart-4: 260 76% 70%;
+  --chart-5: 340 82% 66%;
+  --sidebar: 332 88% 97%;
+  --sidebar-foreground: 318 32% 20%;
+  --sidebar-primary: 327 84% 62%;
+  --sidebar-primary-foreground: 340 100% 98%;
+  --sidebar-accent: 280 72% 68%;
+  --sidebar-accent-foreground: 340 100% 98%;
+  --sidebar-border: 332 54% 88%;
+  --sidebar-ring: 327 84% 62%;
+  background-color: #ffe5f2;
+  color: #351627;
+  font-family:
+    "Alumni Sans", "Montserrat Variable", "Montserrat", "Segoe UI", sans-serif;
 }
 
 html,
@@ -59,60 +58,61 @@ body {
   overflow-y: auto;
   background:
     radial-gradient(
-      circle at 15% 10%,
-      rgba(255, 214, 94, 0.45),
-      transparent 50%
+      circle at 20% 8%,
+      rgba(255, 180, 215, 0.6),
+      transparent 52%
     ),
     radial-gradient(
-      circle at 85% 20%,
-      rgba(255, 136, 213, 0.35),
-      transparent 45%
+      circle at 80% 20%,
+      rgba(217, 172, 255, 0.45),
+      transparent 48%
     ),
     radial-gradient(
       circle at 50% 100%,
-      rgba(160, 129, 255, 0.28),
+      rgba(255, 216, 240, 0.65),
       transparent 55%
     ),
-    #fff6d6;
+    #ffe5f2;
   color: inherit;
+  font-weight: 200;
 }
 
 .dark {
   color-scheme: light;
-  --background: 48 92% 14%;
-  --foreground: 46 100% 96%;
-  --muted: 318 24% 26%;
-  --muted-foreground: 46 100% 90%;
-  --popover: 313 52% 18%;
-  --popover-foreground: 46 100% 96%;
-  --card: 313 48% 20%;
-  --card-foreground: 46 100% 96%;
-  --border: 318 44% 28%;
-  --input: 318 44% 28%;
-  --primary: 297 77% 70%;
-  --primary-foreground: 312 42% 16%;
-  --secondary: 325 76% 66%;
-  --secondary-foreground: 312 42% 16%;
-  --accent: 272 77% 68%;
-  --accent-foreground: 312 42% 16%;
+  --background: 323 58% 14%;
+  --foreground: 340 100% 96%;
+  --muted: 323 34% 24%;
+  --muted-foreground: 340 80% 88%;
+  --popover: 322 52% 18%;
+  --popover-foreground: 340 100% 96%;
+  --card: 322 48% 20%;
+  --card-foreground: 340 100% 96%;
+  --border: 323 44% 28%;
+  --input: 323 44% 28%;
+  --primary: 327 84% 70%;
+  --primary-foreground: 322 46% 16%;
+  --secondary: 280 72% 68%;
+  --secondary-foreground: 322 46% 16%;
+  --accent: 260 76% 70%;
+  --accent-foreground: 322 46% 16%;
   --destructive: 0 84% 62%;
-  --destructive-foreground: 312 42% 16%;
-  --ring: 297 77% 70%;
-  --chart-1: 297 77% 70%;
-  --chart-2: 325 76% 72%;
-  --chart-3: 272 77% 68%;
-  --chart-4: 41 93% 62%;
-  --chart-5: 17 90% 64%;
-  --sidebar: 313 48% 20%;
-  --sidebar-foreground: 46 100% 96%;
-  --sidebar-primary: 297 77% 70%;
-  --sidebar-primary-foreground: 312 42% 16%;
-  --sidebar-accent: 325 76% 72%;
-  --sidebar-accent-foreground: 312 42% 16%;
-  --sidebar-border: 318 44% 28%;
-  --sidebar-ring: 297 77% 70%;
-  background-color: #261326;
-  color: #fff4fb;
+  --destructive-foreground: 322 46% 16%;
+  --ring: 327 84% 70%;
+  --chart-1: 327 84% 70%;
+  --chart-2: 300 76% 68%;
+  --chart-3: 280 72% 68%;
+  --chart-4: 260 76% 70%;
+  --chart-5: 340 82% 66%;
+  --sidebar: 322 48% 20%;
+  --sidebar-foreground: 340 100% 96%;
+  --sidebar-primary: 327 84% 70%;
+  --sidebar-primary-foreground: 322 46% 16%;
+  --sidebar-accent: 280 72% 68%;
+  --sidebar-accent-foreground: 322 46% 16%;
+  --sidebar-border: 323 44% 28%;
+  --sidebar-ring: 327 84% 70%;
+  background-color: #311726;
+  color: #ffeef7;
 }
 
 #root {
@@ -126,57 +126,69 @@ main {
 
 h1,
 h2,
-h3 {
-  font-family: "Sour Gummy", "Montserrat Variable", "Montserrat", sans-serif;
+h3,
+.logo {
+  font-family: "Alumni Sans", "Montserrat Variable", "Montserrat", sans-serif;
   letter-spacing: -0.01em;
+  font-weight: 900;
 }
 
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+p,
+span,
+li,
+label,
+input,
+button,
+textarea,
+select {
+  font-family: "Alumni Sans", "Montserrat Variable", "Montserrat", sans-serif;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply text-foreground bg-background;
-  }
-  a {
-    @apply text-primary underline-offset-2 hover:underline;
-  }
+button,
+input,
+textarea,
+select {
+  font-weight: 200;
+  font-family: "Alumni Sans", "Montserrat Variable", "Montserrat", sans-serif;
+  color: hsl(var(--foreground));
+}
+
+input,
+textarea,
+select {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) / 1.5);
+  padding: 0.6rem 0.85rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+button {
+  font-weight: 600;
+}
+
+* {
+  border-color: hsl(var(--border));
+  outline-color: hsl(var(--ring));
+}
+
+body {
+  outline: none;
+}
+
+a {
+  color: hsl(var(--primary));
+  text-underline-offset: 0.25em;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
 }

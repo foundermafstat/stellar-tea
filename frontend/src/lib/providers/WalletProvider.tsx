@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   useEffect,
@@ -6,15 +8,16 @@ import {
   useState,
   useTransition,
 } from "react";
-import { wallet } from "../util/wallet";
-import storage from "../util/storage";
+import storage from "@/lib/storage";
+import { wallet } from "@/lib/wallet";
+import type { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 
 export interface WalletContextType {
   address?: string;
   network?: string;
   networkPassphrase?: string;
   isPending: boolean;
-  signTransaction?: typeof wallet.signTransaction;
+  signTransaction?: StellarWalletsKit["signTransaction"];
 }
 
 const initialState = {
@@ -25,15 +28,15 @@ const initialState = {
 
 const POLL_INTERVAL = 1000;
 
-export const WalletContext = // eslint-disable-line react-refresh/only-export-components
-  createContext<WalletContextType>({ isPending: true });
+export const WalletContext = createContext<WalletContextType>({
+  isPending: true,
+});
 
 export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] =
     useState<Omit<WalletContextType, "isPending">>(initialState);
   const [isPending, startTransition] = useTransition();
   const popupLock = useRef(false);
-  const signTransaction = wallet.signTransaction.bind(wallet);
 
   const nullify = () => {
     updateState(initialState);
@@ -44,7 +47,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateState = (newState: Omit<WalletContextType, "isPending">) => {
-    setState((prev: Omit<WalletContextType, "isPending">) => {
+    setState((prev) => {
       if (
         prev.address !== newState.address ||
         prev.network !== newState.network ||
@@ -57,9 +60,8 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateCurrentWalletState = async () => {
-    // There is no way, with StellarWalletsKit, to check if the wallet is
-    // installed/connected/authorized. We need to manage that on our side by
-    // checking our storage item.
+    if (typeof window === "undefined") return;
+
     const walletId = storage.getItem("walletId");
     const walletNetwork = storage.getItem("walletNetwork");
     const walletAddr = storage.getItem("walletAddress");
@@ -82,9 +84,6 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       nullify();
     } else {
       if (popupLock.current) return;
-      // If our storage item is there, then we try to get the user's address &
-      // network from their wallet. Note: `getAddress` MAY open their wallet
-      // extension, depending on which wallet they select!
       try {
         popupLock.current = true;
         wallet.setWallet(walletId);
@@ -103,13 +102,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
           storage.setItem("walletAddress", a.address);
           updateState({ ...a, ...n });
         }
-      } catch (e) {
-        // If `getNetwork` or `getAddress` throw errors... sign the user out???
+      } catch (error) {
         nullify();
-        // then log the error (instead of throwing) so we have visibility
-        // into the error while working on Scaffold Stellar but we do not
-        // crash the app process
-        console.error(e);
+        console.error(error);
       } finally {
         popupLock.current = false;
       }
@@ -117,44 +112,43 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     let isMounted = true;
 
-    // Create recursive polling function to check wallet state continuously
     const pollWalletState = async () => {
       if (!isMounted) return;
 
       await updateCurrentWalletState();
 
       if (isMounted) {
-        timer = setTimeout(() => void pollWalletState(), POLL_INTERVAL);
+        timer = setTimeout(() => {
+          void pollWalletState();
+        }, POLL_INTERVAL);
       }
     };
 
-    // Get the wallet address when the component is mounted for the first time
     startTransition(async () => {
       await updateCurrentWalletState();
-      // Start polling after initial state is loaded
-
       if (isMounted) {
-        timer = setTimeout(() => void pollWalletState(), POLL_INTERVAL);
+        timer = setTimeout(() => {
+          void pollWalletState();
+        }, POLL_INTERVAL);
       }
     });
 
-    // Clear the timeout and stop polling when the component unmounts
     return () => {
       isMounted = false;
       if (timer) clearTimeout(timer);
     };
-  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps -- it SHOULD only run once per component mount
+  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const contextValue = useMemo(
     () => ({
       ...state,
       isPending,
-      signTransaction,
+      signTransaction: wallet.signTransaction,
     }),
-    [state, isPending, signTransaction],
+    [state, isPending],
   );
 
   return <WalletContext value={contextValue}>{children}</WalletContext>;
