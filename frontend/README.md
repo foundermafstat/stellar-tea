@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Stellar Tea Frontend
 
-## Getting Started
+Generative NFT tooling for the Stellar Tea experience is implemented in this app:
 
-First, run the development server:
+- NFT layer manifest loading from IPFS
+- Browser-side compositing of PNG layers and gradient overlays
+- IPFS uploads (Filebase) for rendered PNG + JSON metadata
+- Fusion helpers for mixing teas and minting through the Soroban contracts
+
+## Requirements
+
+- Node 20+
+- pnpm 8+ (`corepack enable pnpm`)
+- Installed workspace dependencies (`pnpm install`)
+
+## Environment Variables
+
+Create `.env.local` in `frontend/` with:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Soroban / IPFS
+NEXT_PUBLIC_TEA_LAYERS_MANIFEST_CID=<CID with layers manifest JSON>
+NEXT_PUBLIC_IPFS_API_KEY=<Filebase basic token, e.g. MTJ...>
+NEXT_PUBLIC_IPFS_API_ENDPOINT=https://ipfs.filebase.io/api/v1   # optional override
+NEXT_PUBLIC_IPFS_GATEWAY_URL=https://ipfs.filebase.io           # optional override
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The manifest JSON must match the `LayersManifest` shape defined in `src/lib/nft/schema.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm dev       # start the Next.js dev server
+pnpm lint      # eslint check
+pnpm test      # vitest unit tests for fusion helpers
+```
 
-## Learn More
+## Generative Workflow
 
-To learn more about Next.js, take a look at the following resources:
+1. Upload layer PNG/SVG assets to IPFS (Filebase recommended).
+2. Publish a manifest (CID referenced by `NEXT_PUBLIC_TEA_LAYERS_MANIFEST_CID`).
+3. Use `/mint` to:
+   - select layers
+   - tweak gradients and traits
+   - preview the rendered PNG
+   - upload PNG + metadata JSON to IPFS
+4. Consume the upload results with the Soroban contracts (`tea-nft` / `tea-game`) for minting or mixing.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/lib/nft/schema.ts` – metadata schema + builder helpers.
+- `src/lib/nft/generator.ts` – canvas renderer for layers and gradients.
+- `src/lib/nft/fusion-helpers.ts` – pure color/stat lineage helpers (tested).
+- `src/lib/nft/fusion.ts` – full fusion pipeline, including Soroban mint call.
+- `src/lib/ipfs/client.ts` – Filebase IPFS uploads (Blob + JSON).
+- `src/app/mint/page.tsx` – UI for composing and uploading NFTs.
 
-## Deploy on Vercel
+## Tests
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Unit tests use [Vitest](https://vitest.dev). Run `pnpm test` to validate color blending, lineage, and metadata helpers. The suite does not touch the DOM.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
