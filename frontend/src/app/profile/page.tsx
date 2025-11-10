@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
+import { TeaCard } from "@/components/nft/tea-card";
 import { useWallet } from "@/lib/hooks/useWallet";
 import {
   type OwnedTeaToken,
@@ -18,33 +18,6 @@ type LoadState =
 
 const emptyState: LoadState = { status: "idle" };
 
-const GATEWAY_BASE = (
-  process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL ?? "https://ipfs.filebase.io"
-).replace(/\/$/, "");
-
-const resolveImageUrl = (value: string | undefined | null) => {
-  if (!value) return value ?? undefined;
-
-  if (value.startsWith("ipfs://")) {
-    const path = value.slice("ipfs://".length);
-    return `${GATEWAY_BASE}/ipfs/${path}`;
-  }
-
-  return value;
-};
-
-const tokenImage = (token: OwnedTeaToken) =>
-  resolveImageUrl(token.metadata?.image_uri) ??
-  resolveImageUrl(token.tokenUri ?? undefined) ??
-  "/design/nft/stellar-tea-001.png";
-
-const statRows = (token: OwnedTeaToken) => [
-  { label: "Level", value: token.metadata?.level ?? 0 },
-  { label: "Rarity", value: token.metadata?.rarity ?? 0 },
-  { label: "Body", value: token.metadata?.stats?.body ?? 0 },
-  { label: "Caffeine", value: token.metadata?.stats?.caffeine ?? 0 },
-  { label: "Sweetness", value: token.metadata?.stats?.sweetness ?? 0 },
-];
 
 export default function ProfilePage() {
   const { address } = useWallet();
@@ -205,46 +178,18 @@ export default function ProfilePage() {
             {state.status === "loaded" && state.tokens.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {state.tokens.map((token) => (
-                  <article
+                  <TeaCard
                     key={token.tokenId}
-                    className="flex h-full flex-col rounded-3xl border border-white/60 bg-white/90 p-5 shadow-[0_25px_65px_rgba(189,140,255,0.18)] backdrop-blur-xl"
-                  >
-                    <div className="relative overflow-hidden rounded-2xl border border-white/60">
-                      <Image
-                        src={tokenImage(token)}
-                        alt={token.metadata?.display_name ?? `Tea #${token.tokenId}`}
-                        width={420}
-                        height={420}
-                        className="h-56 w-full object-cover"
-                      />
-                      <div className="absolute bottom-4 left-4 rounded-full border border-white/70 bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.26em] text-slate-600 shadow-[0_10px_25px_rgba(189,140,255,0.18)]">
-                        #{token.tokenId}
-                      </div>
-                    </div>
-                    <div className="mt-5 flex flex-1 flex-col">
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        {token.metadata?.display_name ?? `Tea #${token.tokenId}`}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {token.metadata?.flavor_profile ?? token.metadata?.infusion ?? "Custom blend"}
-                      </p>
-                      <dl className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-600">
-                        {statRows(token).map((row) => (
-                          <div
-                            key={row.label}
-                            className="rounded-2xl border border-white/70 bg-white/80 px-3 py-3 text-center shadow-[0_15px_35px_rgba(189,140,255,0.15)]"
-                          >
-                            <dt className="uppercase tracking-[0.22em] text-slate-400">
-                              {row.label}
-                            </dt>
-                            <dd className="mt-1 text-base font-semibold text-slate-700">
-                              {row.value}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-                  </article>
+                    data={{
+                      tokenId: token.tokenId,
+                      chainMetadata: token.metadata,
+                      offchainMetadata: token.offchainMetadata ?? null,
+                      imageUri: token.offchainMetadata?.image ?? token.metadata?.image_uri ?? token.tokenUri,
+                      tokenUri: token.tokenUri,
+                    }}
+                    onList={() => console.log("List for sale", token.tokenId)}
+                    onMix={() => console.log("Send for fusion", token.tokenId)}
+                  />
                 ))}
               </div>
             ) : null}

@@ -88,17 +88,17 @@ export const NFTCarousel = () => {
           </div>
 
           <div className="flex-1">
-            <div className="relative mx-auto max-w-[360px]">
+            <div className="relative mx-auto max-w-[380px]">
               <div className="absolute -inset-6 rounded-[40px] bg-pink-200/40 blur-3xl animate-glow" />
-              <div className="relative overflow-hidden rounded-[36px] border border-white/70 bg-white/80 p-6 shadow-[0_26px_60px_rgba(189,140,255,0.32)] backdrop-blur-2xl">
-                <div className="relative aspect-[3/4] overflow-hidden rounded-[28px] border border-white/70 bg-white/90 shadow-[0_18px_45px_rgba(170,95,245,0.3)]">
+              <div className="relative rounded-[36px] border border-white/70 bg-white/90 p-5 shadow-[0_26px_60px_rgba(189,140,255,0.28)] backdrop-blur-2xl">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] border border-purple-100 bg-gradient-to-br from-white via-purple-50/40 to-pink-50/60 shadow-[0_18px_45px_rgba(170,95,245,0.22)]">
                   <Image
                     key={activeItem.image}
                     src={activeItem.image}
                     alt={activeItem.name}
                     fill
-                    className="object-cover transition-all duration-700"
-                    sizes="(max-width: 1024px) 90vw, 360px"
+                    className="object-contain transition-all duration-700"
+                    sizes="(max-width: 1024px) 90vw, 380px"
                   />
                 </div>
               </div>
@@ -109,7 +109,7 @@ export const NFTCarousel = () => {
                   key={item.name}
                   type="button"
                   onClick={() => setActiveIndex(index)}
-                  className={`relative h-16 w-16 overflow-hidden rounded-2xl border transition ${
+                  className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border bg-white/70 transition ${
                     activeIndex === index
                       ? "border-pink-400 shadow-[0_12px_30px_rgba(236,72,153,0.25)]"
                       : "border-white/70 opacity-70 hover:opacity-100"
@@ -120,7 +120,7 @@ export const NFTCarousel = () => {
                     src={item.image}
                     alt={item.name}
                     fill
-                    className="object-cover"
+                    className="object-contain"
                     sizes="64px"
                   />
                 </button>

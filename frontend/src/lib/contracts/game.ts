@@ -91,17 +91,52 @@ export type OnChainListing = {
 
 const LISTING_SYMBOL = "Listing";
 
+const isMissingEntryError = (error: unknown) => {
+  if (!error) return false;
+
+  if (typeof error === "object") {
+    if ("status" in error && (error as { status?: number }).status === 404) return true;
+    if ("code" in error && (error as { code?: number }).code === 404) return true;
+    if ("name" in error && (error as { name?: string }).name === "NotFoundError") return true;
+    if ("message" in error && typeof (error as { message?: unknown }).message === "string") {
+      const message = (error as { message: string }).message.toLowerCase();
+      if (
+        message.includes("entry not found") ||
+        message.includes("missing value") ||
+        message.includes("missing state") ||
+        message.includes("not found") ||
+        message.includes("404")
+      ) {
+        return true;
+      }
+    }
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("entry not found") ||
+      message.includes("missing value") ||
+      message.includes("missing state") ||
+      message.includes("not found") ||
+      message.includes("404")
+    );
+  }
+
+  return false;
+};
+
 const fetchListingFromStorage = async (
   contractId: string,
   tokenId: number,
 ): Promise<OnChainListing | null> => {
-  try {
-    const key = xdr.ScVal.scvVec([
-      xdr.ScVal.scvSymbol(LISTING_SYMBOL),
-      xdr.ScVal.scvU64(BigInt(tokenId)),
-    ]);
+  const key = xdr.ScVal.scvVec([
+    xdr.ScVal.scvSymbol(LISTING_SYMBOL),
+    xdr.ScVal.scvU64(BigInt(tokenId)),
+  ]);
 
-    const entry = await rpcServer.getContractData(contractId, key, rpc.Durability.Persistent);
+  const tryFetch = async (durability: rpc.Durability): Promise<OnChainListing | null> => {
+    const entry = await rpcServer.getContractData(contractId, key, durability);
     const value = entry?.val?.contractData()?.val();
     if (!value) return null;
 
@@ -114,18 +149,32 @@ const fetchListingFromStorage = async (
       paymentToken: resolvePaymentToken(decoded.payment_token),
       createdAt: Number(decoded.created_at),
     };
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes("entry not found") ||
-        error.message.includes("missing value") ||
-        error.message.includes("404"))
-    ) {
-      return null;
+  };
+
+  const tried: Array<{ durability: rpc.Durability; error: unknown }> = [];
+
+  for (const durability of [rpc.Durability.Persistent, rpc.Durability.Temporary]) {
+    try {
+      const listing = await tryFetch(durability);
+      if (listing) return listing;
+    } catch (error) {
+      if (isMissingEntryError(error)) {
+        continue;
+      }
+      tried.push({ durability, error });
     }
-    console.error(`Failed to fetch listing for token ${tokenId}`, error);
-    return null;
   }
+
+  if (tried.length > 0) {
+    console.error(
+      `Failed to fetch listing for token ${tokenId} after trying ${tried
+        .map(({ durability }) => durability)
+        .join(", ")}`,
+      tried.at(-1)?.error,
+    );
+  }
+
+  return null;
 };
 
 export type MarketplaceListing = {

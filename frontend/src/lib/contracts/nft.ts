@@ -2,12 +2,13 @@
 
 import {
   Client as TeaNftClient,
-  type TeaMetadata,
+  type TeaMetadata as ChainTeaMetadata,
   networks as teaNftNetworks,
 } from "tea-nft-client";
 import type { SignTransaction as SorobanSignTransaction } from "@stellar/stellar-sdk/contract";
 
 import { networkPassphrase, rpcUrl, stellarNetwork } from "@/lib/stellarConfig";
+import { type TeaMetadata as OffchainTeaMetadata } from "@/lib/nft/schema";
 
 type WalletSigner = SorobanSignTransaction;
 export type TeaNftWalletSigner = WalletSigner;
@@ -72,8 +73,40 @@ export const getTeaContractId = () => resolveContractId();
 
 export type OwnedTeaToken = {
   tokenId: number;
-  metadata: TeaMetadata;
+  metadata: ChainTeaMetadata;
   tokenUri?: string;
+  offchainMetadata?: OffchainTeaMetadata | null;
+};
+
+const resolveGatewayBase = () =>
+  (process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL ?? "https://ipfs.filebase.io").replace(/\/$/, "");
+
+const toGatewayUrl = (uri: string) => {
+  if (!uri) return uri;
+  if (uri.startsWith("ipfs://")) {
+    const path = uri.slice("ipfs://".length);
+    return `${resolveGatewayBase()}/ipfs/${path}`;
+  }
+  return uri;
+};
+
+const fetchOffchainMetadata = async (uri?: string): Promise<OffchainTeaMetadata | null> => {
+  if (!uri) return null;
+
+  try {
+    const url = toGatewayUrl(uri);
+    const response = await fetch(url, { cache: "force-cache" });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load metadata ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as OffchainTeaMetadata;
+    return data;
+  } catch (error) {
+    console.warn("Failed to fetch off-chain metadata", { uri, error });
+    return null;
+  }
 };
 
 export const fetchOwnedTeaTokens = async (owner: string): Promise<OwnedTeaToken[]> => {
@@ -99,10 +132,13 @@ export const fetchOwnedTeaTokens = async (owner: string): Promise<OwnedTeaToken[
         client.token_uri({ token_id: tokenId }),
       ]);
 
+      const tokenUri = tokenUriTx.result ?? undefined;
+
       return {
         tokenId,
         metadata: metadataTx.result,
-        tokenUri: tokenUriTx.result ?? undefined,
+        tokenUri,
+        offchainMetadata: await fetchOffchainMetadata(tokenUri),
       } satisfies OwnedTeaToken;
     }),
   );

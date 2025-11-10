@@ -43,6 +43,11 @@ const shortenAddress = (value: string, size = 4) => {
 
 const navigationItems = [
 	{
+		label: 'Mint',
+		description: 'Blind mint. One button, pure luck.',
+		href: '/mint',
+	},
+	{
 		label: 'Marketplace',
 		description: 'Trade Stellar Tea collectibles and ingredients.',
 		href: '/marketplace',
@@ -51,16 +56,6 @@ const navigationItems = [
 		label: 'Swap',
 		description: 'Exchange XLM for STARS inside the protocol.',
 		href: '/swap',
-	},
-	{
-		label: 'Brewing Lab',
-		description: 'Craft unique blends using your collected essences.',
-		href: '/lab',
-	},
-	{
-		label: 'Lore',
-		description: 'Discover the chronicles behind Stellar Tea.',
-		href: '/lore',
 	},
 ];
 
@@ -191,16 +186,6 @@ export const Header = () => {
 										className="inline-flex h-10 items-center rounded-full border border-white/60 bg-white/80 px-5 text-sm font-semibold text-slate-600 shadow-[0_10px_28px_rgba(189,140,255,0.14)] transition hover:border-pink-200 hover:bg-white hover:text-purple-600"
 									>
 										About
-									</Link>
-								</NavigationMenuLink>
-							</NavigationMenuItem>
-							<NavigationMenuItem>
-								<NavigationMenuLink asChild>
-									<Link
-										href="/docs"
-										className="inline-flex h-10 items-center rounded-full border border-white/60 bg-white/80 px-5 text-sm font-semibold text-slate-600 shadow-[0_10px_28px_rgba(189,140,255,0.14)] transition hover:border-pink-200 hover:bg-white hover:text-purple-600"
-									>
-										Docs
 									</Link>
 								</NavigationMenuLink>
 							</NavigationMenuItem>

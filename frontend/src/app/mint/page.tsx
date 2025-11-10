@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { useWallet } from "@/lib/hooks/useWallet";
+import { TeaCard, type TeaCardData } from "@/components/nft/tea-card";
 import { buildTeaMetadata } from "@/lib/nft";
 import { generateLocalLayers } from "@/lib/nft/generateLocal";
 import { buildFlavorTemplate } from "@/lib/nft/metadataTemplate";
@@ -17,23 +17,10 @@ import {
   createSwapClient,
   type SwapTeaMetadata,
 } from "@/lib/contracts/swap";
-import { transactionExplorerUrl } from "@/lib/stellarConfig";
+import type { TeaMetadata as ChainTeaMetadata } from "tea-nft-client";
 
 const OUTPUT_WIDTH = 485;
 const OUTPUT_HEIGHT = 1000;
-const GATEWAY_BASE =
-  (process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL ?? "https://ipfs.filebase.io").replace(/\/$/, "");
-
-type MintHistoryItem = {
-  seed: string;
-  name: string;
-  flavorDescription: string;
-  imageCid: string;
-  metadataCid: string;
-  dataUrl: string;
-  tokenId?: number;
-  txHash?: string;
-};
 
 const randomStat = () => 40 + Math.floor(Math.random() * 40);
 
@@ -90,7 +77,7 @@ const unwrapTokenId = (value: unknown): number | undefined => {
 const MintPage = () => {
   const { address, signTransaction } = useWallet();
   const [isMinting, setIsMinting] = useState(false);
-  const [history, setHistory] = useState<MintHistoryItem[]>([]);
+  const [mintedPreview, setMintedPreview] = useState<TeaCardData | null>(null);
 
   const handleMint = async () => {
     if (!address || !signTransaction) {
@@ -198,28 +185,46 @@ const MintPage = () => {
         mintReceipt.getTransactionResponse?.txHash ??
         mintReceipt.sendTransactionResponse?.hash ??
         "";
-      const tokenId = unwrapTokenId(mintTx.result) ?? 0;
-
-      setHistory((prev) =>
-        [
-          {
-            seed,
-            name: template.name,
-            flavorDescription: template.description,
-            imageCid: imageUpload.cid,
-            metadataCid: metadataUpload.cid,
-            dataUrl: rendered.dataUrl,
-            tokenId: Number.isFinite(tokenId) ? tokenId : undefined,
-            txHash: txHash || undefined,
-          },
-          ...prev,
-        ].slice(0, 6),
-      );
+      const tokenId = unwrapTokenId(mintTx.result);
+      const info: string[] = [];
+      if (typeof tokenId === "number" && Number.isFinite(tokenId)) {
+        info.push(`Token #${tokenId}`);
+      }
+      if (txHash) {
+        info.push(`Tx ${txHash}`);
+      }
+      if (info.length === 0) {
+        info.push(`${BASE_MINT_STARS_COST} STARS debited.`);
+      }
 
       toast({
-        title: `${template.name} brewed`,
-        description: `${BASE_MINT_STARS_COST} STARS debited.`,
+        title: "Blind brew complete",
+        description: info.join(" · "),
         dismissible: true,
+      });
+
+      const previewTokenId = typeof tokenId === "number" && Number.isFinite(tokenId) ? tokenId : undefined;
+      const previewChainMetadata = {
+        display_name: template.name,
+        flavor_profile: template.flavorProfile,
+        rarity: rarityToCode(template.rarity),
+        level: 1,
+        infusion: template.infusion,
+        stats: {
+          body: stats.body,
+          caffeine: stats.caffeine,
+          sweetness: stats.sweetness,
+        },
+        lineage: [],
+        image_uri: metadataPayload.image,
+      } satisfies ChainTeaMetadata;
+
+      setMintedPreview({
+        tokenId: previewTokenId,
+        chainMetadata: previewChainMetadata,
+        offchainMetadata: metadataPayload,
+        imageUri: metadataPayload.image,
+        tokenUri: metadataUpload.cid,
       });
     } catch (error) {
       console.error(error);
@@ -234,127 +239,49 @@ const MintPage = () => {
   };
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-[#f6f1ff] to-[#fff] pb-24 pt-16">
-      <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top,_rgba(157,129,255,0.25),_transparent_70%)]" />
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-10 px-6">
-        <header className="space-y-3">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/60 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-purple-500 shadow-[0_12px_32px_rgba(189,140,255,0.18)]">
-            Base Mint · 150 STARS
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold text-slate-800 md:text-4xl">
-              One-click random Stellar Tea mint
-            </h1>
-            <p className="max-w-2xl text-sm text-slate-600 md:text-base">
-              Spend 150 STARS, assemble layers from the public directory, upload PNG and metadata to
-              Filebase IPFS, and trigger the Soroban contract with no manual tweaks.
+    <main className="relative min-h-screen bg-gradient-to-b from-[#f6f1ff] to-[#fff] pb-24 pt-20">
+      <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top,_rgba(157,129,255,0.28),_transparent_75%)]" />
+      <div className="relative mx-auto w-full max-w-xl rounded-[32px] border border-white/60 bg-white/85 p-12 text-center shadow-[0_30px_90px_rgba(189,140,255,0.2)] backdrop-blur-2xl">
+        <h1 className="text-3xl font-semibold text-slate-900 md:text-4xl">Blind Mint</h1>
+        <p className="mt-4 text-sm leading-relaxed text-slate-600 md:text-base">
+          This is a blind mint. There are no previews, no hints, only the brew the contract serves.
+          Tap the button and hope luck sides with you.
+        </p>
+        <div className="mt-10 flex justify-center">
+          <Button
+            variant="candy"
+            disabled={!address || !signTransaction || isMinting}
+            onClick={handleMint}
+            className="h-12 rounded-full px-8 text-xs font-semibold uppercase tracking-[0.3em]"
+          >
+            {isMinting
+              ? "Brewing…"
+              : address
+              ? `Blind Mint · ${BASE_MINT_STARS_COST} STARS`
+              : "Connect Wallet"}
+          </Button>
+        </div>
+        <p className="mt-6 text-xs uppercase tracking-[0.32em] text-slate-400">
+          Blind drop. One shot. Good luck.
+        </p>
+        {mintedPreview ? (
+          <div className="mt-12 text-left">
+            <h2 className="text-lg font-semibold text-slate-800">Latest Brew</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Freshly minted NFT preview. Actions are coming soon.
             </p>
-          </div>
-        </header>
-
-        <section className="space-y-6 rounded-3xl border border-white/60 bg-white/90 p-8 shadow-[0_35px_85px_rgba(189,140,255,0.22)] backdrop-blur-2xl">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-700">Instant mint</h2>
-              <p className="text-sm text-slate-500">
-                No previews or tuning — the brew is generated on the fly. Colors, layers, rendering,
-                and uploads are automatic.
-              </p>
+            <div className="mt-6">
+              <TeaCard
+                data={mintedPreview}
+                onList={() =>
+                  console.log("List minted token for sale", mintedPreview.tokenId ?? "unknown")
+                }
+                onMix={() =>
+                  console.log("Send minted token for fusion", mintedPreview.tokenId ?? "unknown")
+                }
+              />
             </div>
-            <Button
-              variant="candy"
-              disabled={!address || !signTransaction || isMinting}
-              onClick={handleMint}
-              className="h-12 rounded-full px-6 text-xs font-semibold uppercase tracking-[0.28em]"
-            >
-              {isMinting
-                ? "Minting…"
-                : address
-                ? `Mint for ${BASE_MINT_STARS_COST} STARS`
-                : "Connect wallet"}
-            </Button>
           </div>
-          <ul className="list-disc space-y-2 pl-5 text-xs text-slate-500">
-            <li>150 STARS transfers to the tea-nft contract before generation</li>
-            <li>PNG 485×1000 with transparency is rendered from layers in `public/nft/generate`</li>
-            <li>Filebase IPFS stores both the image and metadata.json</li>
-            <li>Rarity: Common, solid colorway, single flavor profile</li>
-          </ul>
-        </section>
-
-        {history.length > 0 ? (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-700">Recent brews</h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              {history.map((item) => {
-                const explorer = item.txHash ? transactionExplorerUrl(item.txHash) : undefined;
-                return (
-                  <div
-                    key={`${item.metadataCid}-${item.seed}`}
-                    className="overflow-hidden rounded-3xl border border-white/60 bg-white/90 shadow-[0_30px_80px_rgba(189,140,255,0.2)] backdrop-blur-2xl"
-                  >
-                    <div className="relative aspect-[485/1000] w-full">
-                      <Image
-                        src={item.dataUrl}
-                        alt={item.name}
-                        fill
-                        unoptimized
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="space-y-2 p-5 text-sm text-slate-600">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-slate-800">{item.name}</h3>
-                        {typeof item.tokenId === "number" ? (
-                          <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-600">
-                            #{item.tokenId}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-xs text-slate-500">{item.flavorDescription}</p>
-                      <ul className="space-y-1 text-xs">
-                        <li>
-                          Image CID:{" "}
-                          <a
-                            href={`${GATEWAY_BASE}/ipfs/${item.imageCid}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-purple-600 underline-offset-4 hover:underline"
-                          >
-                            {item.imageCid}
-                          </a>
-                        </li>
-                        <li>
-                          Metadata CID:{" "}
-                          <a
-                            href={`${GATEWAY_BASE}/ipfs/${item.metadataCid}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-purple-600 underline-offset-4 hover:underline"
-                          >
-                            {item.metadataCid}
-                          </a>
-                        </li>
-                        {item.txHash ? (
-                          <li>
-                            Tx:{" "}
-                            <a
-                              href={explorer ?? "#"}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-purple-600 underline-offset-4 hover:underline"
-                            >
-                              {item.txHash}
-                            </a>
-                          </li>
-                        ) : null}
-                      </ul>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
         ) : null}
       </div>
     </main>
