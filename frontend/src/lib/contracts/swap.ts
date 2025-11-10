@@ -1,6 +1,6 @@
 "use client";
 
-import { Client as SwapContractClient } from "swap-client";
+import { Client as SwapContractClient, networks as swapNetworks } from "swap-client";
 import type { SignTransaction as SorobanSignTransaction } from "@stellar/stellar-sdk/contract";
 
 import { networkPassphrase, rpcUrl } from "@/lib/stellarConfig";
@@ -9,9 +9,10 @@ import { extractSorobanErrorMessage } from "@/lib/util/soroban";
 type WalletSigner = SorobanSignTransaction;
 
 const resolveContractId = () => {
-  const contractId = process.env.NEXT_PUBLIC_SWAP_CONTRACT_ID;
+  const fallback = swapNetworks.testnet.contractId;
+  const contractId = process.env.NEXT_PUBLIC_SWAP_CONTRACT_ID ?? fallback;
   if (!contractId) {
-    throw new Error("NEXT_PUBLIC_SWAP_CONTRACT_ID is not set.");
+    throw new Error("Swap contract id is not configured. Set NEXT_PUBLIC_SWAP_CONTRACT_ID.");
   }
   return contractId;
 };
@@ -54,4 +55,6 @@ export const createSwapClient = ({ publicKey, signer }: CreateClientParams = {})
     signTransaction: signer && publicKey ? adaptSigner(signer, publicKey) : undefined,
   });
 };
+
+export type { TeaMetadata as SwapTeaMetadata } from "swap-client";
 

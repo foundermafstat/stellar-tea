@@ -29,3 +29,10 @@ if (typeof window !== 'undefined') {
   //@ts-ignore Buffer exists
   window.Buffer = window.Buffer || Buffer;
 }
+
+export const networks = {
+  testnet: {
+    networkPassphrase: "Test SDF Network ; September 2015",
+    contractId: "CCSMRVZW77HXGDBVXUTDAM5MOH4AX6DS2O7CWY3TEVAUHGJFEYN7LWJP",
+  },
+} as const;

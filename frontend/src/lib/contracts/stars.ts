@@ -11,7 +11,7 @@ type WalletSigner = SorobanSignTransaction;
 export type StarsWalletSigner = WalletSigner;
 
 const NETWORK_DEFAULT_CONTRACT: Partial<Record<typeof stellarNetwork, string>> = {
-  TESTNET: "CCVQ5AG5KSMKL3YGSAX3AYWDS7Q6OYHVILQ7OLH7VMTFCVRCAWDDL4DB",
+  TESTNET: "CCSMRVZW77HXGDBVXUTDAM5MOH4AX6DS2O7CWY3TEVAUHGJFEYN7LWJP",
 };
 
 const resolveContractId = () => {

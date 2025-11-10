@@ -11,12 +11,12 @@ import { generateLocalLayers } from "@/lib/nft/generateLocal";
 import { buildFlavorTemplate } from "@/lib/nft/metadataTemplate";
 import { renderTeaImage } from "@/lib/nft/generator";
 import { uploadBlobToIpfs, uploadJsonToIpfs } from "@/lib/ipfs/client";
-import {
-  createTeaNftClient,
-  getTeaContractId,
-  type TeaNftWalletSigner,
-} from "@/lib/contracts/nft";
+import { getTeaContractId } from "@/lib/contracts/nft";
 import { BASE_MINT_STARS_COST, payStarsFee, type StarsWalletSigner } from "@/lib/contracts/stars";
+import {
+  createSwapClient,
+  type SwapTeaMetadata,
+} from "@/lib/contracts/swap";
 import { transactionExplorerUrl } from "@/lib/stellarConfig";
 
 const OUTPUT_WIDTH = 485;
@@ -36,6 +36,56 @@ type MintHistoryItem = {
 };
 
 const randomStat = () => 40 + Math.floor(Math.random() * 40);
+
+const rarityToCode = (rarity: string): number => {
+  const normalized = rarity.trim().toLowerCase();
+  switch (normalized) {
+    case "common":
+      return 1;
+    case "uncommon":
+      return 2;
+    case "rare":
+      return 3;
+    case "epic":
+      return 4;
+    case "legendary":
+      return 5;
+    default:
+      return 1;
+  }
+};
+
+const unwrapTokenId = (value: unknown): number | undefined => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "unwrap" in value &&
+    typeof (value as { unwrap: () => unknown }).unwrap === "function"
+  ) {
+    try {
+      const unwrapped = (value as { unwrap: () => unknown }).unwrap();
+      return unwrapTokenId(unwrapped);
+    } catch (error) {
+      console.error("Failed to unwrap swap mint result", error);
+      return undefined;
+    }
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "value" in value &&
+    typeof (value as { value: unknown }).value !== "undefined"
+  ) {
+    return unwrapTokenId((value as { value: unknown }).value);
+  }
+
+  return undefined;
+};
 
 const MintPage = () => {
   const { address, signTransaction } = useWallet();
@@ -79,6 +129,12 @@ const MintPage = () => {
       const imageUpload = await uploadBlobToIpfs(rendered.blob, `${seed}.png`, "image/png");
 
       const template = buildFlavorTemplate(primaryFlavor, seed, "Common");
+      const stats = {
+        body: randomStat(),
+        caffeine: randomStat(),
+        sweetness: randomStat(),
+      };
+
       const metadataPayload = buildTeaMetadata({
         name: template.name,
         description: `${template.description} Brewed fresh in the Stellar Tea lab.`,
@@ -98,24 +154,36 @@ const MintPage = () => {
           tint: layer.tint,
         })),
         lineage: { generation: 0, parents: [] },
-        stats: {
-          body: randomStat(),
-          caffeine: randomStat(),
-          sweetness: randomStat(),
-        },
+        stats,
         mixCount: 0,
       });
 
-      const metadataUpload = await uploadJsonToIpfs(metadataPayload, `${seed}.json`);
+      const metadataUpload = await uploadJsonToIpfs(metadataPayload);
 
-      const teaClient = createTeaNftClient({
+      const onchainMetadata: SwapTeaMetadata = {
+        display_name: template.name,
+        flavor_profile: template.flavorProfile,
+        rarity: rarityToCode(template.rarity),
+        level: 1,
+        infusion: template.infusion,
+        stats: {
+          body: stats.body,
+          caffeine: stats.caffeine,
+          sweetness: stats.sweetness,
+        },
+        lineage: [],
+        image_uri: metadataPayload.image,
+      };
+
+      const swapClient = createSwapClient({
         publicKey: address,
-        signer: signTransaction as TeaNftWalletSigner,
+        signer: signTransaction as StarsWalletSigner,
       });
-      const mintTx = await teaClient.mint({
+
+      const mintTx = await swapClient.mint_tea({
         caller: address,
-        to: address,
-        tea_metadata: metadataPayload,
+        recipient: address,
+        tea_metadata: onchainMetadata,
       });
 
       const blockers = mintTx.needsNonInvokerSigningBy?.() ?? [];
@@ -130,7 +198,7 @@ const MintPage = () => {
         mintReceipt.getTransactionResponse?.txHash ??
         mintReceipt.sendTransactionResponse?.hash ??
         "";
-      const tokenId = Number(mintTx.result ?? 0);
+      const tokenId = unwrapTokenId(mintTx.result) ?? 0;
 
       setHistory((prev) =>
         [

@@ -18,8 +18,25 @@ type LoadState =
 
 const emptyState: LoadState = { status: "idle" };
 
+const GATEWAY_BASE = (
+  process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL ?? "https://ipfs.filebase.io"
+).replace(/\/$/, "");
+
+const resolveImageUrl = (value: string | undefined | null) => {
+  if (!value) return value ?? undefined;
+
+  if (value.startsWith("ipfs://")) {
+    const path = value.slice("ipfs://".length);
+    return `${GATEWAY_BASE}/ipfs/${path}`;
+  }
+
+  return value;
+};
+
 const tokenImage = (token: OwnedTeaToken) =>
-  token.metadata?.image_uri || token.tokenUri || "/design/nft/stellar-tea-001.png";
+  resolveImageUrl(token.metadata?.image_uri) ??
+  resolveImageUrl(token.tokenUri ?? undefined) ??
+  "/design/nft/stellar-tea-001.png";
 
 const statRows = (token: OwnedTeaToken) => [
   { label: "Level", value: token.metadata?.level ?? 0 },

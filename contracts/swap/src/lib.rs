@@ -1,7 +1,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, IntoVal,
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env,
+    IntoVal, String, Vec,
 };
 
 #[contracttype]
@@ -17,6 +18,28 @@ pub struct Config {
     pub stars_token: Address,
     pub treasury: Address,
     pub xlm_token: Address,
+    pub tea_contract: Address,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub struct TeaStats {
+    pub sweetness: u32,
+    pub body: u32,
+    pub caffeine: u32,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub struct TeaMetadata {
+    pub display_name: String,
+    pub flavor_profile: String,
+    pub rarity: u32,
+    pub level: u32,
+    pub infusion: String,
+    pub stats: TeaStats,
+    pub lineage: Vec<u64>,
+    pub image_uri: String,
 }
 
 #[contracterror]
@@ -39,6 +62,7 @@ impl Swap {
         stars_token: Address,
         treasury: Address,
         xlm_token: Address,
+        tea_contract: Address,
     ) -> Result<(), SwapError> {
         let storage = env.storage().instance();
         if storage.has(&DataKey::Config) {
@@ -52,12 +76,15 @@ impl Swap {
             stars_token: stars_token.clone(),
             treasury: treasury.clone(),
             xlm_token: xlm_token.clone(),
+            tea_contract: tea_contract.clone(),
         };
 
         storage.set(&DataKey::Config, &config);
 
-        env.events()
-            .publish(("swap_init",), (owner, stars_token, treasury, xlm_token));
+        env.events().publish(
+            ("swap_init",),
+            (owner, stars_token, treasury, xlm_token, tea_contract),
+        );
 
         Ok(())
     }
@@ -99,6 +126,27 @@ impl Swap {
         );
 
         Ok(())
+    }
+
+    pub fn mint_tea(
+        env: Env,
+        caller: Address,
+        recipient: Address,
+        tea_metadata: TeaMetadata,
+    ) -> Result<u64, SwapError> {
+        caller.require_auth();
+
+        let config = Self::config(&env)?;
+        let swap_address = env.current_contract_address();
+
+        let args = (&swap_address, &recipient, tea_metadata.clone()).into_val(&env);
+
+        let token_id: u64 = env.invoke_contract(&config.tea_contract, &symbol_short!("mint"), args);
+
+        env.events()
+            .publish(("tea_minted",), (caller, recipient, token_id));
+
+        Ok(token_id)
     }
 
     pub fn set_token(env: Env, owner: Address, stars_token: Address) -> Result<(), SwapError> {
@@ -148,6 +196,28 @@ impl Swap {
         storage.set(&DataKey::Config, &config);
 
         env.events().publish(("swap_xlm_token_updated",), xlm_token);
+
+        Ok(())
+    }
+
+    pub fn set_tea_contract(
+        env: Env,
+        owner: Address,
+        tea_contract: Address,
+    ) -> Result<(), SwapError> {
+        let storage = env.storage().instance();
+        let mut config = Self::config(&env)?;
+
+        if owner != config.owner {
+            return Err(SwapError::Unauthorized);
+        }
+        owner.require_auth();
+
+        config.tea_contract = tea_contract.clone();
+        storage.set(&DataKey::Config, &config);
+
+        env.events()
+            .publish(("swap_tea_contract_updated",), tea_contract);
 
         Ok(())
     }
