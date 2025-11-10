@@ -12,7 +12,7 @@ export const Footer = () => {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-8 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">Stellar Tea</p>
-          <p>Brewing galactic experiences since 2024.</p>
+          <p>Brewing galactic experiences since 2025.</p>
           <p className="text-xs text-muted-foreground/80">
             © {year} Stellar Tea Collective. All rights reserved.
           </p>

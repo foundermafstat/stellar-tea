@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import type { ToastVariant } from "@/components/ui/toast";
+
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000;
 
@@ -11,6 +13,7 @@ type ToasterToast = {
   description?: React.ReactNode;
   action?: React.ReactNode;
   dismissible?: boolean;
+  variant?: ToastVariant;
 };
 
 type ToastState = {

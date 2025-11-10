@@ -33,4 +33,3 @@ mod tests {
         assert_eq!(client.balance(admin.clone()), metadata::INITIAL_SUPPLY);
     }
 }
-

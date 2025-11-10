@@ -68,9 +68,18 @@ importers:
       stars-token-client:
         specifier: workspace:*
         version: link:../packages/stars-token-client
+      swap-client:
+        specifier: workspace:*
+        version: link:../packages/swap-client
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
+      tea-game-client:
+        specifier: workspace:*
+        version: link:../packages/tea-game-client
+      tea-nft-client:
+        specifier: workspace:*
+        version: link:../packages/tea-nft-client
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -120,6 +129,19 @@ importers:
     dependencies:
       '@stellar/stellar-sdk':
         specifier: ^14.1.1
+        version: 14.3.1
+      buffer:
+        specifier: 6.0.3
+        version: 6.0.3
+    devDependencies:
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
+
+  packages/swap-client:
+    dependencies:
+      '@stellar/stellar-sdk':
+        specifier: ^14.3.1
         version: 14.3.1
       buffer:
         specifier: 6.0.3

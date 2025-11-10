@@ -4,6 +4,7 @@ members = [
     "contracts/nft-tea",
     "contracts/tokens/balls",
     "contracts/tokens/stars",
+    "contracts/swap",
 ]
 resolver = "2"
 

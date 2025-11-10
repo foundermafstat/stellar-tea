@@ -12,4 +12,3 @@ pub fn burn_by_admin(env: &Env, from: &Address, amount: i128) {
     let _ = admin::require_admin(env);
     Base::burn(env, from, amount);
 }
-

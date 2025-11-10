@@ -66,7 +66,13 @@ export const useWalletBalance = () => {
   }, [address]);
 
   useEffect(() => {
-    void updateBalance();
+    const timeout = setTimeout(() => {
+      void updateBalance();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [updateBalance]);
 
   return {

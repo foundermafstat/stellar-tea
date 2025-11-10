@@ -21,6 +21,10 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        candy:
+          "rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 text-white shadow-[0_18px_45px_rgba(189,140,255,0.32)] transition hover:brightness-105 focus-visible:ring-offset-0",
+        frost:
+          "rounded-full border-2 border-pink-200 bg-white/70 text-pink-500 shadow-[0_10px_30px_rgba(236,72,153,0.18)] backdrop-blur hover:border-purple-200 hover:text-purple-600 focus-visible:ring-offset-0",
       },
       size: {
         default: "h-10 px-4 py-2",

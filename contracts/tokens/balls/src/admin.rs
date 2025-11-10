@@ -22,4 +22,3 @@ pub fn require_admin(env: &Env) -> Address {
     admin.require_auth();
     admin
 }
-

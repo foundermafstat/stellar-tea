@@ -1,0 +1,17 @@
+[package]
+name = "swap"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk.workspace = true
+
+[dev-dependencies]
+stars-token = { path = "../tokens/stars" }
+

@@ -15,8 +15,12 @@ export const Toaster = () => {
 
   return (
     <ToastProvider>
-      {toasts.map(({ id, title, description, action, dismissible }) => (
-        <Toast key={id} onOpenChange={(open) => !open && dismiss(id)}>
+      {toasts.map(({ id, title, description, action, dismissible, variant }) => (
+        <Toast
+          key={id}
+          variant={variant}
+          onOpenChange={(open) => !open && dismiss(id)}
+        >
           <div className="grid gap-1">
             {title ? <ToastTitle>{title}</ToastTitle> : null}
             {description ? (

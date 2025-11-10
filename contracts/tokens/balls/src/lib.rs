@@ -48,4 +48,3 @@ mod tests {
         assert_eq!(client.balance(recipient), amount);
     }
 }
-

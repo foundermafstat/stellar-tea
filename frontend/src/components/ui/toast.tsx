@@ -35,8 +35,13 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: "",
+        success:
+          "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-[0_14px_28px_rgba(16,185,129,0.18)]",
+        info: "border-sky-200 bg-sky-50 text-sky-700 shadow-[0_14px_28px_rgba(56,189,248,0.18)]",
+        warning:
+          "border-amber-200 bg-amber-50 text-amber-800 shadow-[0_14px_28px_rgba(251,191,36,0.18)]",
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive",
+          "border-destructive/50 bg-rose-50 text-destructive shadow-[0_14px_28px_rgba(248,113,113,0.18)]",
       },
     },
     defaultVariants: {
@@ -44,6 +49,10 @@ const toastVariants = cva(
     },
   },
 );
+
+export type ToastVariant = NonNullable<
+  VariantProps<typeof toastVariants>["variant"]
+>;
 
 const Toast = ({
   ref,
@@ -143,4 +152,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  toastVariants,
 };

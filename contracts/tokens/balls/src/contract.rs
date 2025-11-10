@@ -51,8 +51,7 @@ impl BallsToken {
     pub fn mint(env: Env, to: Address, amount: i128) {
         let admin = admin::require_admin(&env);
         Base::mint(&env, &to, amount);
-        env.events()
-            .publish(("mint",), (admin, to, amount));
+        env.events().publish(("mint",), (admin, to, amount));
     }
 
     pub fn burn(env: Env, from: Address, amount: i128) {
@@ -63,8 +62,7 @@ impl BallsToken {
     pub fn burn_by_admin(env: Env, from: Address, amount: i128) {
         let admin = admin::require_admin(&env);
         burn::burn_by_admin(&env, &from, amount);
-        env.events()
-            .publish(("burn_admin",), (admin, from, amount));
+        env.events().publish(("burn_admin",), (admin, from, amount));
     }
 
     pub fn metadata(env: Env) -> (u32, String, String) {
@@ -75,4 +73,3 @@ impl BallsToken {
         )
     }
 }
-

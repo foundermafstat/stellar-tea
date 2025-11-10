@@ -16,4 +16,3 @@ pub fn init_metadata(env: &Env) {
         String::from_str(env, SYMBOL),
     );
 }
-
