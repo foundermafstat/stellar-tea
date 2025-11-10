@@ -1,112 +1,134 @@
+@import "@fontsource-variable/montserrat";
+@import "@fontsource/sour-gummy/400.css";
+
 @import "tailwindcss";
 
 @plugin "tailwindcss-animate";
-/* Import font for Stellar Design System */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Inconsolata:wght@500&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  color-scheme: dark;
-  --background: 222 78% 7%;
-  --foreground: 210 40% 96%;
-  --muted: 222 32% 18%;
-  --muted-foreground: 214 20% 74%;
-  --popover: 222 78% 8%;
-  --popover-foreground: 210 40% 96%;
-  --card: 222 69% 10%;
-  --card-foreground: 210 40% 96%;
-  --border: 223 52% 18%;
-  --input: 223 52% 18%;
-  --primary: 199 89% 65%;
-  --primary-foreground: 210 40% 12%;
-  --secondary: 267 83% 71%;
-  --secondary-foreground: 210 40% 12%;
-  --accent: 199 89% 65%;
-  --accent-foreground: 210 40% 12%;
+  color-scheme: light;
+  --background: 48 92% 94%;
+  --foreground: 318 25% 20%;
+  --muted: 42 56% 92%;
+  --muted-foreground: 315 18% 36%;
+  --popover: 46 100% 98%;
+  --popover-foreground: 318 32% 24%;
+  --card: 46 100% 97%;
+  --card-foreground: 320 28% 18%;
+  --border: 45 64% 85%;
+  --input: 45 70% 86%;
+  --primary: 297 77% 60%;
+  --primary-foreground: 46 100% 98%;
+  --secondary: 325 76% 66%;
+  --secondary-foreground: 46 100% 98%;
+  --accent: 272 77% 68%;
+  --accent-foreground: 46 100% 98%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 12%;
-  --ring: 199 89% 65%;
-  --radius: 0.75rem;
-  background-color: #050c1a;
-  color: #f1f5f9;
-  font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --chart-1: 199 89% 65%;
-  --chart-2: 162 82% 67%;
-  --chart-3: 267 83% 71%;
-  --chart-4: 279 70% 65%;
-  --chart-5: 20 88% 68%;
-  --sidebar: 222 78% 8%;
-  --sidebar-foreground: 210 40% 96%;
-  --sidebar-primary: 199 89% 65%;
-  --sidebar-primary-foreground: 210 40% 12%;
-  --sidebar-accent: 199 89% 65%;
-  --sidebar-accent-foreground: 210 40% 12%;
-  --sidebar-border: 223 52% 18%;
-  --sidebar-ring: 199 89% 65%;
+  --destructive-foreground: 46 100% 98%;
+  --ring: 297 77% 60%;
+  --radius: 1.25rem;
+  --chart-1: 297 77% 60%;
+  --chart-2: 325 76% 66%;
+  --chart-3: 272 77% 68%;
+  --chart-4: 41 93% 62%;
+  --chart-5: 17 90% 64%;
+  --sidebar: 46 100% 97%;
+  --sidebar-foreground: 318 25% 20%;
+  --sidebar-primary: 297 77% 60%;
+  --sidebar-primary-foreground: 46 100% 98%;
+  --sidebar-accent: 325 76% 66%;
+  --sidebar-accent-foreground: 46 100% 98%;
+  --sidebar-border: 47 64% 82%;
+  --sidebar-ring: 297 77% 60%;
+  background-color: #fff6d6;
+  color: #4a243d;
+  font-family: "Montserrat Variable", "Montserrat", "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
-    radial-gradient(circle at top, rgba(56, 189, 248, 0.15), transparent 45%),
     radial-gradient(
-      circle at bottom,
-      rgba(168, 85, 247, 0.12),
-      transparent 40%
+      circle at 15% 10%,
+      rgba(255, 214, 94, 0.45),
+      transparent 50%
     ),
-    #050c1a;
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(255, 136, 213, 0.35),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(160, 129, 255, 0.28),
+      transparent 55%
+    ),
+    #fff6d6;
   color: inherit;
 }
 
 .dark {
-  color-scheme: dark;
-  --background: 222 78% 7%;
-  --foreground: 210 40% 96%;
-  --muted: 222 32% 18%;
-  --muted-foreground: 214 20% 74%;
-  --popover: 222 78% 8%;
-  --popover-foreground: 210 40% 96%;
-  --card: 222 69% 10%;
-  --card-foreground: 210 40% 96%;
-  --border: 223 52% 18%;
-  --input: 223 52% 18%;
-  --primary: 199 89% 65%;
-  --primary-foreground: 210 40% 12%;
-  --secondary: 267 83% 71%;
-  --secondary-foreground: 210 40% 12%;
-  --accent: 199 89% 65%;
-  --accent-foreground: 210 40% 12%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 12%;
-  --ring: 199 89% 65%;
-  --chart-1: 199 89% 65%;
-  --chart-2: 162 82% 67%;
-  --chart-3: 267 83% 71%;
-  --chart-4: 279 70% 65%;
-  --chart-5: 20 88% 68%;
-  --sidebar: 222 78% 8%;
-  --sidebar-foreground: 210 40% 96%;
-  --sidebar-primary: 199 89% 65%;
-  --sidebar-primary-foreground: 210 40% 12%;
-  --sidebar-accent: 199 89% 65%;
-  --sidebar-accent-foreground: 210 40% 12%;
-  --sidebar-border: 223 52% 18%;
-  --sidebar-ring: 199 89% 65%;
+  color-scheme: light;
+  --background: 48 92% 14%;
+  --foreground: 46 100% 96%;
+  --muted: 318 24% 26%;
+  --muted-foreground: 46 100% 90%;
+  --popover: 313 52% 18%;
+  --popover-foreground: 46 100% 96%;
+  --card: 313 48% 20%;
+  --card-foreground: 46 100% 96%;
+  --border: 318 44% 28%;
+  --input: 318 44% 28%;
+  --primary: 297 77% 70%;
+  --primary-foreground: 312 42% 16%;
+  --secondary: 325 76% 66%;
+  --secondary-foreground: 312 42% 16%;
+  --accent: 272 77% 68%;
+  --accent-foreground: 312 42% 16%;
+  --destructive: 0 84% 62%;
+  --destructive-foreground: 312 42% 16%;
+  --ring: 297 77% 70%;
+  --chart-1: 297 77% 70%;
+  --chart-2: 325 76% 72%;
+  --chart-3: 272 77% 68%;
+  --chart-4: 41 93% 62%;
+  --chart-5: 17 90% 64%;
+  --sidebar: 313 48% 20%;
+  --sidebar-foreground: 46 100% 96%;
+  --sidebar-primary: 297 77% 70%;
+  --sidebar-primary-foreground: 312 42% 16%;
+  --sidebar-accent: 325 76% 72%;
+  --sidebar-accent-foreground: 312 42% 16%;
+  --sidebar-border: 318 44% 28%;
+  --sidebar-ring: 297 77% 70%;
+  background-color: #261326;
+  color: #fff4fb;
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 main {
-  min-height: 100vh;
   color: inherit;
+  min-height: 0;
 }
 
-a {
-  color: #38bdf8;
+h1,
+h2,
+h3 {
+  font-family: "Sour Gummy", "Montserrat Variable", "Montserrat", sans-serif;
+  letter-spacing: -0.01em;
 }
 
 @theme inline {
@@ -152,6 +174,9 @@ a {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply text-foreground;
+    @apply text-foreground bg-background;
+  }
+  a {
+    @apply text-primary underline-offset-2 hover:underline;
   }
 }
