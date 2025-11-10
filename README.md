@@ -98,6 +98,11 @@ Provides XLM-to-STARS conversion with programmable treasury routing.
 All contracts use **OpenZeppelin Stellar** libraries for secure token implementations.
 
 ---
+Architecture Diagram:
+![Architecture Diagram](./frontend/public/assets/architecture.png)
+
+---
+
 
 ## **Game Mechanics**
 
