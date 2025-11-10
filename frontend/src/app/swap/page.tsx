@@ -12,6 +12,7 @@ import { fetchStarsMetadata, type StarsWalletSigner } from "@/lib/contracts/star
 import { createSwapClient } from "@/lib/contracts/swap";
 import { parseAmountToI128 } from "@/lib/util/tokenMath";
 import { extractSorobanErrorMessage } from "@/lib/util/soroban";
+import { transactionExplorerUrl } from "@/lib/stellarConfig";
 
 const STARS_PER_XLM = 24.5;
 const STARS_PER_XLM_NUM = 245n;
@@ -167,12 +168,31 @@ export default function SwapPage() {
       const sent = await tx.signAndSend();
       const txHash =
         sent.getTransactionResponse?.txHash ?? sent.sendTransactionResponse?.hash;
+      const explorerUrl = transactionExplorerUrl(txHash);
 
       toast({
         title: "Swap completed",
-        description: txHash
-          ? `Transaction hash: ${txHash}`
-          : `Minted ~${nextStarsAmount} ${tokenMeta.symbol}.`,
+        description: (
+          <div className="flex flex-col gap-1">
+            <span>
+              Minted ~{nextStarsAmount} {tokenMeta.symbol}.
+            </span>
+            {explorerUrl ? (
+              <Link
+                href={explorerUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-semibold text-purple-600 underline-offset-4 hover:underline"
+              >
+                View transaction in explorer →
+              </Link>
+            ) : txHash ? (
+              <span className="break-all text-xs text-slate-500">
+                Transaction hash: {txHash}
+              </span>
+            ) : null}
+          </div>
+        ),
         dismissible: true,
       });
       await updateBalance();

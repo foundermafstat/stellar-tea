@@ -108,3 +108,24 @@ export const network: NetworkDescriptor = {
   rpcUrl,
   horizonUrl,
 };
+
+const EXPLORER_BASE: Partial<Record<typeof stellarNetwork, string>> = {
+  PUBLIC: "https://stellar.expert/explorer/public",
+  TESTNET: "https://stellar.expert/explorer/testnet",
+  FUTURENET: "https://stellar.expert/explorer/futurenet",
+};
+
+const trimTrailingSlash = (value: string) =>
+  value.endsWith("/") ? value.slice(0, -1) : value;
+
+export const transactionExplorerUrl = (hash: string | undefined | null) => {
+  if (!hash) return undefined;
+
+  const base = EXPLORER_BASE[stellarNetwork];
+  if (base) {
+    return `${base}/tx/${hash}`;
+  }
+
+  const normalizedHorizon = trimTrailingSlash(horizonUrl);
+  return `${normalizedHorizon}/transactions/${hash}`;
+};
